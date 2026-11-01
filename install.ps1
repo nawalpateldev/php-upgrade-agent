@@ -264,7 +264,8 @@ function Sync-Agents-Folder {
             $srcSkill = Join-Path $toolkitDir ".agents\skills\$skill"
             $destSkill = Join-Path $destSkills $skill
             if (Test-Path $srcSkill) {
-                Copy-Item -Path $srcSkill -Destination $destSkill -Recurse -Force
+                if (-not (Test-Path $destSkill)) { New-Item -ItemType Directory -Path $destSkill -Force | Out-Null }
+                Copy-Item -Path "$srcSkill\*" -Destination $destSkill -Recurse -Force
             }
         }
 
@@ -318,7 +319,8 @@ function Install-Copilot {
             $src = Join-Path $toolkitDir ".agents\skills\$skill"
             $dest = Join-Path $destCopilotSkills $skill
             if (Test-Path $src) {
-                Copy-Item -Path $src -Destination $dest -Recurse -Force
+                if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+                Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
             }
         }
     }
@@ -340,7 +342,8 @@ function Install-Claude {
             $src = Join-Path $toolkitDir ".agents\skills\$skill"
             $dest = Join-Path $destClaudeSkills $skill
             if (Test-Path $src) {
-                Copy-Item -Path $src -Destination $dest -Recurse -Force
+                if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+                Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
             }
         }
 

@@ -246,7 +246,8 @@ sync_agents_folder() {
 
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.agents/skills/"
+                mkdir -p "${TARGET_DIR}/.agents/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.agents/skills/${skill}/"
             fi
         done
 
@@ -286,7 +287,8 @@ install_copilot() {
         mkdir -p "${TARGET_DIR}/.github/skills"
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.github/skills/"
+                mkdir -p "${TARGET_DIR}/.github/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.github/skills/${skill}/"
             fi
         done
     fi
@@ -304,7 +306,8 @@ install_claude() {
         mkdir -p "${TARGET_DIR}/.claude/skills"
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.claude/skills/"
+                mkdir -p "${TARGET_DIR}/.claude/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.claude/skills/${skill}/"
             fi
         done
 

@@ -1,0 +1,32 @@
+{
+    "name": "ai-lab/php-upgrade-agent",
+    "description": "Comprehensive PHP upgrade, framework migration, and security hardening toolkit.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2.0"
+    },
+    "require-dev": {
+        "rector/rector": "^1.2",
+        "driftingly/rector-laravel": "^1.2",
+        "rector/rector-symfony": "^1.2",
+        "phpstan/phpstan": "^1.12",
+        "phpstan/phpstan-deprecation-rules": "^1.2",
+        "vimeo/psalm": "^5.26",
+        "roave/security-advisories": "dev-latest",
+        "symfony/process": "^6.4|^7.0",
+        "phpunit/phpunit": "^10.5|^11.0"
+    },
+    "scripts": {
+        "audit": "composer audit",
+        "php2shell-scan": "php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.",
+        "security-scan": "php .agents/skills/php-security-hardener/scripts/security-audit.php .",
+        "phpstan": "vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

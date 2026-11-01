@@ -68,19 +68,45 @@ $toolkitClaudeCommands = @(
 # --------------------------------------------------------------------
 # 1. Detect & Resolve Target Project Root
 # --------------------------------------------------------------------
+$workingDir = (Get-Location).Path
 $parentDir = Split-Path $toolkitDir -Parent
 $hasParentProject = $false
 if ($parentDir -and (Test-Path $parentDir)) {
-    if ((Test-Path (Join-Path $parentDir "composer.json")) -or (Test-Path (Join-Path $parentDir "artisan"))) {
+    if ((Test-Path (Join-Path $parentDir "composer.json")) -or (Test-Path (Join-Path $parentDir "artisan")) -or (Test-Path (Join-Path $parentDir "index.php"))) {
         $hasParentProject = $true
     }
 }
 
 if ([string]::IsNullOrWhiteSpace($TargetPath)) {
-    $suggestedTarget = if ($hasParentProject) { $parentDir } else { $toolkitDir }
+    if ($workingDir -ne $toolkitDir) {
+        $suggestedTarget = $workingDir
+        $isWorkingDirDefault = $true
+    } elseif ($hasParentProject) {
+        $suggestedTarget = $parentDir
+        $isWorkingDirDefault = $false
+    } else {
+        $suggestedTarget = $toolkitDir
+        $isWorkingDirDefault = $false
+    }
 
     Write-Host "Select Target Project Root:" -ForegroundColor Yellow
-    if ($hasParentProject) {
+    if ($isWorkingDirDefault) {
+        Write-Host "  [1] Current Working Directory ($suggestedTarget) " -NoNewline
+        Write-Host "(Recommended - Press Enter)" -ForegroundColor Green
+        Write-Host "  [2] Toolkit Directory ($toolkitDir)"
+        Write-Host "  [3] Custom Path"
+        $pathChoice = Read-Host "`nEnter selection [1-3 or path] (Default: 1)"
+
+        if ([string]::IsNullOrWhiteSpace($pathChoice) -or $pathChoice -eq "1") {
+            $TargetPath = $suggestedTarget
+        } elseif ($pathChoice -eq "2") {
+            $TargetPath = $toolkitDir
+        } elseif (Test-Path $pathChoice) {
+            $TargetPath = $pathChoice
+        } else {
+            $TargetPath = $suggestedTarget
+        }
+    } elseif ($hasParentProject) {
         Write-Host "  [1] Parent Project Root ($suggestedTarget) " -NoNewline
         Write-Host "(Recommended - Press Enter)" -ForegroundColor Green
         Write-Host "  [2] Current Directory ($toolkitDir)"
@@ -94,42 +120,58 @@ if ([string]::IsNullOrWhiteSpace($TargetPath)) {
         } elseif (Test-Path $pathChoice) {
             $TargetPath = $pathChoice
         } else {
-            $customPath = Read-Host "Enter full path to project root"
-            $TargetPath = if (Test-Path $customPath) { $customPath } else { $suggestedTarget }
+            $TargetPath = $suggestedTarget
         }
     } else {
         Write-Host "  [1] Current Directory ($toolkitDir) " -NoNewline
         Write-Host "(Default - Press Enter)" -ForegroundColor Green
         Write-Host "  [2] Parent Directory ($parentDir)"
         Write-Host "  [3] Custom Path"
-        $pathChoice = Read-Host "`nEnter selection [1-3] (Default: 1)"
+        $pathChoice = Read-Host "`nEnter selection [1-3 or path] (Default: 1)"
 
-        if ($pathChoice -eq "2") {
+        if ([string]::IsNullOrWhiteSpace($pathChoice) -or $pathChoice -eq "1") {
+            $TargetPath = $toolkitDir
+        } elseif ($pathChoice -eq "2") {
             $TargetPath = $parentDir
-        } elseif ($pathChoice -eq "3") {
+        } elseif (Test-Path $pathChoice) {
+            $TargetPath = $pathChoice
+        } else {
             $customPath = Read-Host "Enter full path to project root"
             $TargetPath = if (Test-Path $customPath) { $customPath } else { $toolkitDir }
-        } else {
-            $TargetPath = $toolkitDir
         }
     }
 }
 
+if (-not (Test-Path $TargetPath)) {
+    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+}
 $targetDir = (Resolve-Path $TargetPath).Path
 Write-Host "`n[*] Target Project Root: " -NoNewline
 Write-Host "$targetDir" -ForegroundColor Cyan
+
+# Detect any existing AI folders in project root
+$detectedFolders = @()
+if (Test-Path (Join-Path $targetDir ".github")) { $detectedFolders += ".github (GitHub Copilot)" }
+if (Test-Path (Join-Path $targetDir ".claude")) { $detectedFolders += ".claude (Claude Code)" }
+if (Test-Path (Join-Path $targetDir ".gemini")) { $detectedFolders += ".gemini (Gemini Code Assist)" }
+if (Test-Path (Join-Path $targetDir ".agents")) { $detectedFolders += ".agents (Universal Antigravity)" }
+
+if ($detectedFolders.Count -gt 0) {
+    Write-Host "  [i] Detected existing AI folders in project root: " -NoNewline
+    Write-Host ($detectedFolders -join ", ") -ForegroundColor Green
+}
 
 # --------------------------------------------------------------------
 # 2. Select AI Provider(s) - Supports Multi-Select
 # --------------------------------------------------------------------
 $providers = @(
-    @{ Id = "copilot";  Name = "GitHub Copilot (Agents in .github/agents/ & .github/skills/)"; Default = $true },
-    @{ Id = "claude";   Name = "Claude Code (Skills in .claude/skills/ & CLAUDE.md)";          Default = $false },
-    @{ Id = "cursor";   Name = "Cursor (Agent Rules in .cursor/rules/)";                      Default = $false },
-    @{ Id = "windsurf"; Name = "Windsurf (Agent Rules in .windsurf/rules/)";                  Default = $false },
-    @{ Id = "gemini";   Name = "Gemini Code Assist / Antigravity (.agents/ & GEMINI.md)";      Default = $false },
-    @{ Id = "codex";    Name = "OpenAI Codex / ChatGPT Dev Tools (.chatgpt/)";                 Default = $false },
-    @{ Id = "all";      Name = "Universal Setup (All Providers)";                             Default = $false }
+    @{ Id = "copilot";  Folder = ".github";  Name = "GitHub Copilot (in .github/skills/ & .github/agents/)"; Default = $true },
+    @{ Id = "claude";   Folder = ".claude";  Name = "Claude Code (in .claude/skills/ & CLAUDE.md)";          Default = $false },
+    @{ Id = "gemini";   Folder = ".gemini";  Name = "Gemini Code Assist / Antigravity (in .gemini/skills/ & .agents/)"; Default = $false },
+    @{ Id = "cursor";   Folder = ".cursor";  Name = "Cursor (Agent Rules in .cursor/rules/)";                Default = $false },
+    @{ Id = "windsurf"; Folder = ".windsurf";Name = "Windsurf (Agent Rules in .windsurf/rules/)";            Default = $false },
+    @{ Id = "codex";    Folder = ".chatgpt"; Name = "OpenAI Codex / ChatGPT Dev Tools (.chatgpt/)";         Default = $false },
+    @{ Id = "all";      Folder = "all";      Name = "Universal Setup (All Providers & Folders)";             Default = $false }
 )
 
 if ([string]::IsNullOrWhiteSpace($LLM)) {
@@ -264,7 +306,8 @@ function Sync-Agents-Folder {
             $srcSkill = Join-Path $toolkitDir ".agents\skills\$skill"
             $destSkill = Join-Path $destSkills $skill
             if (Test-Path $srcSkill) {
-                Copy-Item -Path $srcSkill -Destination $destSkill -Recurse -Force
+                if (-not (Test-Path $destSkill)) { New-Item -ItemType Directory -Path $destSkill -Force | Out-Null }
+                Copy-Item -Path "$srcSkill\*" -Destination $destSkill -Recurse -Force
             }
         }
 
@@ -318,7 +361,8 @@ function Install-Copilot {
             $src = Join-Path $toolkitDir ".agents\skills\$skill"
             $dest = Join-Path $destCopilotSkills $skill
             if (Test-Path $src) {
-                Copy-Item -Path $src -Destination $dest -Recurse -Force
+                if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+                Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
             }
         }
     }
@@ -340,7 +384,8 @@ function Install-Claude {
             $src = Join-Path $toolkitDir ".agents\skills\$skill"
             $dest = Join-Path $destClaudeSkills $skill
             if (Test-Path $src) {
-                Copy-Item -Path $src -Destination $dest -Recurse -Force
+                if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+                Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
             }
         }
 
@@ -386,9 +431,26 @@ function Install-Windsurf {
 }
 
 function Install-Gemini {
-    Write-Host "[*] Configuring Gemini / Antigravity ($targetDir\GEMINI.md)..."
+    Write-Host "[*] Configuring Gemini Code Assist & Antigravity ($targetDir\.gemini & GEMINI.md)..."
     $geminiContent = Get-Content (Join-Path $templateDir "GEMINI.md") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir "GEMINI.md") -Content $geminiContent
+
+    if ($targetDir -ne $toolkitDir) {
+        # Deploy Gemini Skills (.gemini/skills/)
+        $destGeminiSkills = Join-Path $targetDir ".gemini\skills"
+        if (-not (Test-Path $destGeminiSkills)) { New-Item -ItemType Directory -Path $destGeminiSkills -Force | Out-Null }
+        foreach ($skill in $toolkitSkills) {
+            $src = Join-Path $toolkitDir ".agents\skills\$skill"
+            $dest = Join-Path $destGeminiSkills $skill
+            if (Test-Path $src) {
+                if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+                Copy-Item -Path "$src\*" -Destination $dest -Recurse -Force
+            }
+        }
+    }
+
+    Write-Host "  [+] Gemini Skills active in: $targetDir\.gemini\skills" -ForegroundColor Green
+    Write-Host "  [+] Gemini Rules active in: $targetDir\GEMINI.md" -ForegroundColor Green
 }
 
 function Install-Codex {
@@ -445,8 +507,10 @@ function Remove-Windsurf {
 }
 
 function Remove-Gemini {
-    Write-Host "[*] Removing Gemini Code Assist..."
+    Write-Host "[*] Removing Gemini Code Assist & Antigravity..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir "GEMINI.md")
+    $geminiSkills = Join-Path $targetDir ".gemini\skills"
+    if (Test-Path $geminiSkills) { Remove-Item $geminiSkills -Recurse -Force }
 }
 
 function Remove-Codex {
@@ -478,24 +542,45 @@ if ($Action -eq "install") {
     Write-Host "Configured Assistants: " -NoNewline
     Write-Host ($selectedLLMs -join ", ").ToUpper() -ForegroundColor Green
 
-    Write-Host "`nRECOMMENDED COMMANDS TO RUN (READ-ONLY / DRY-RUN FIRST):" -ForegroundColor Yellow
+    # Determine the relative skills paths based on user selection
+    $skillsFolders = @()
+    if ($selectedLLMs -contains "copilot") { $skillsFolders += ".github/skills" }
+    if ($selectedLLMs -contains "claude")  { $skillsFolders += ".claude/skills" }
+    if ($selectedLLMs -contains "gemini")  { $skillsFolders += ".gemini/skills" }
+    if ($skillsFolders.Count -eq 0 -or (Test-Path (Join-Path $targetDir ".agents"))) {
+        $skillsFolders += ".agents/skills"
+    }
+
+    Write-Host "`nRECOMMENDED COMMANDS (RELATIVE PATHS FROM YOUR PROJECT ROOT):" -ForegroundColor Yellow
     Write-Host "--------------------------------------------------------------------"
+    Write-Host "Works on any system/OS in project root: $targetDir`n" -ForegroundColor DarkGray
+
+    # Show commands for the primary installed folder
+    $primaryRel = $skillsFolders[0]
     Write-Host "1. Scan for php2shell & RCE vulnerabilities:" -ForegroundColor White
-    Write-Host "   php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.`n" -ForegroundColor Cyan
+    Write-Host "   php $primaryRel/php2shell-fixer/scripts/php2shell-audit.php --path=.`n" -ForegroundColor Cyan
 
     Write-Host "2. Scan for OWASP Top 10 security flaws:" -ForegroundColor White
-    Write-Host "   php .agents/skills/php-security-hardener/scripts/security-audit.php .`n" -ForegroundColor Cyan
+    Write-Host "   php $primaryRel/php-security-hardener/scripts/security-audit.php .`n" -ForegroundColor Cyan
 
     Write-Host "3. Preview safe PHP Core AST modernization (Dry Run up to PHP 8.5+):" -ForegroundColor White
-    Write-Host "   vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php`n" -ForegroundColor Cyan
+    Write-Host "   vendor/bin/rector process --dry-run --config=$primaryRel/php-core-upgrader/scripts/rector-php-upgrade.php`n" -ForegroundColor Cyan
 
     Write-Host "4. Preview Framework upgrade plan (Laravel 8 -> 12+ / Latest):" -ForegroundColor White
-    Write-Host "   vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php`n" -ForegroundColor Cyan
+    Write-Host "   vendor/bin/rector process --dry-run --config=$primaryRel/laravel-upgrader/scripts/rector-laravel.php`n" -ForegroundColor Cyan
 
     Write-Host "5. Run static analysis deprecation audit:" -ForegroundColor White
-    Write-Host "   vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon`n" -ForegroundColor Cyan
+    Write-Host "   vendor/bin/phpstan analyse -c $primaryRel/php-core-upgrader/scripts/phpstan.neon`n" -ForegroundColor Cyan
 
-    Write-Host "OR INVOKE YOUR AGENTS DIRECTLY:" -ForegroundColor Yellow
+    if ($skillsFolders.Count -gt 1) {
+        Write-Host "NOTE: You can also use any of your other installed relative folders:" -ForegroundColor Yellow
+        foreach ($sf in $skillsFolders) {
+            Write-Host "   - $sf/php2shell-fixer/scripts/php2shell-audit.php" -ForegroundColor DarkGray
+        }
+        Write-Host ""
+    }
+
+    Write-Host "OR INVOKE YOUR AGENTS DIRECTLY IN CHAT:" -ForegroundColor Yellow
     Write-Host '   Copilot: @php-upgrade-architect "Plan migration to PHP 8.5 and audit php2shell"' -ForegroundColor White
     Write-Host '   Claude:  /php-audit and /php-upgrade' -ForegroundColor White
     Write-Host '   Cursor/Gemini: "Audit this codebase for php2shell vulnerabilities"' -ForegroundColor White

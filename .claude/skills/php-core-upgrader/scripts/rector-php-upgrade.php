@@ -21,11 +21,19 @@ return static function (RectorConfig $rectorConfig): void {
     // Set target PHP version dynamically
     $rectorConfig->phpVersion($currentPhpVersionId);
 
-    // 2. Paths to process
-    $rectorConfig->paths([
-        __DIR__ . '/../../../../app',
-        __DIR__ . '/../../../../src',
-    ]);
+    // 2. Paths to process (dynamically detect existing application code directories)
+    $projectRoot = dirname(__DIR__, 4);
+    $candidatePaths = [
+        $projectRoot . '/app',
+        $projectRoot . '/src',
+        $projectRoot . '/application',
+        $projectRoot . '/system',
+    ];
+    $paths = array_values(array_filter($candidatePaths, 'is_dir'));
+    if (empty($paths)) {
+        $paths = [$projectRoot];
+    }
+    $rectorConfig->paths($paths);
 
     // 3. Excluded vendor, storage, and test fixtures
     $rectorConfig->skip([

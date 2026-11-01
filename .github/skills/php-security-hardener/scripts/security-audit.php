@@ -7,10 +7,10 @@ declare(strict_types=1);
  * Identifies SQL injection, SSRF, raw user input output (XSS), and weak cryptography.
  */
 
-$target = $argv[1] ?? 'app';
+$target = $argv[1] ?? '.';
 
 if (!is_dir($target) && !is_file($target)) {
-    echo "Usage: php security-audit.php <path-to-code>\n";
+    echo "Usage: php security-audit.php [path-to-code (default: .)]\n";
     exit(1);
 }
 
@@ -39,11 +39,24 @@ $patterns = [
     ]
 ];
 
-$files = is_file($target) ? [$target] : new RecursiveIteratorIterator(new RecursiveDirectoryIterator($target));
+$files = is_file($target) ? [$target] : new RecursiveIteratorIterator(new RecursiveDirectoryIterator($target, FilesystemIterator::SKIP_DOTS));
 $findingsCount = 0;
 
 foreach ($files as $file) {
-    if (is_dir((string)$file) || substr((string)$file, -4) !== '.php') {
+    $pathStr = (string)$file;
+    if (is_dir($pathStr) || substr($pathStr, -4) !== '.php') {
+        continue;
+    }
+
+    if (strpos($pathStr, DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . '.agents' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . '.github' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . '.claude' . DIRECTORY_SEPARATOR) !== false ||
+        strpos($pathStr, DIRECTORY_SEPARATOR . '.gemini' . DIRECTORY_SEPARATOR) !== false ||
+        str_ends_with($pathStr, 'security-audit.php') ||
+        str_ends_with($pathStr, 'php2shell-audit.php')) {
         continue;
     }
     

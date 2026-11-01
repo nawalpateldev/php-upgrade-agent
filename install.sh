@@ -72,15 +72,38 @@ echo -e "${GREEN}[SAFETY INVARIANT] Never modifies your PHP code, database, or c
 # --------------------------------------------------------------------
 # 1. Detect & Resolve Target Project Root
 # --------------------------------------------------------------------
+CURRENT_DIR="$(pwd)"
 PARENT_DIR="$(dirname "$TOOLKIT_DIR")"
 HAS_PARENT_PROJECT=false
 
-if [ -f "${PARENT_DIR}/composer.json" ] || [ -f "${PARENT_DIR}/artisan" ]; then
+if [ -f "${PARENT_DIR}/composer.json" ] || [ -f "${PARENT_DIR}/artisan" ] || [ -f "${PARENT_DIR}/index.php" ]; then
     HAS_PARENT_PROJECT=true
 fi
 
 if [ -z "$TARGET_DIR" ]; then
-    if [ "$HAS_PARENT_PROJECT" = true ]; then
+    if [ "$CURRENT_DIR" != "$TOOLKIT_DIR" ]; then
+        SUGGESTED_TARGET="$CURRENT_DIR"
+        echo -e "${YELLOW}Select Target Project Root:${RESET}"
+        echo -e "  [1] Current Working Directory ($SUGGESTED_TARGET) ${GREEN}(Recommended - Press Enter)${RESET}"
+        echo -e "  [2] Toolkit Directory ($TOOLKIT_DIR)"
+        echo -e "  [3] Custom Path"
+        read -p "Enter selection [1-3 or path] (Default: 1): " PATH_CHOICE
+
+        case "$PATH_CHOICE" in
+            2) TARGET_DIR="$TOOLKIT_DIR" ;;
+            3)
+                read -p "Enter full path to project root: " CUSTOM_PATH
+                TARGET_DIR="$CUSTOM_PATH"
+                ;;
+            *)
+                if [ -d "$PATH_CHOICE" ]; then
+                    TARGET_DIR="$PATH_CHOICE"
+                else
+                    TARGET_DIR="$SUGGESTED_TARGET"
+                fi
+                ;;
+        esac
+    elif [ "$HAS_PARENT_PROJECT" = true ]; then
         SUGGESTED_TARGET="$PARENT_DIR"
         echo -e "${YELLOW}Select Target Project Root:${RESET}"
         echo -e "  [1] Parent Project Root ($SUGGESTED_TARGET) ${GREEN}(Recommended - Press Enter)${RESET}"
@@ -107,7 +130,7 @@ if [ -z "$TARGET_DIR" ]; then
         echo -e "  [1] Current Directory ($TOOLKIT_DIR) ${GREEN}(Default - Press Enter)${RESET}"
         echo -e "  [2] Parent Directory ($PARENT_DIR)"
         echo -e "  [3] Custom Path"
-        read -p "Enter selection [1-3] (Default: 1): " PATH_CHOICE
+        read -p "Enter selection [1-3 or path] (Default: 1): " PATH_CHOICE
 
         case "$PATH_CHOICE" in
             2) TARGET_DIR="$PARENT_DIR" ;;
@@ -115,13 +138,30 @@ if [ -z "$TARGET_DIR" ]; then
                 read -p "Enter full path to project root: " CUSTOM_PATH
                 TARGET_DIR="$CUSTOM_PATH"
                 ;;
-            *) TARGET_DIR="$TOOLKIT_DIR" ;;
+            *)
+                if [ -d "$PATH_CHOICE" ]; then
+                    TARGET_DIR="$PATH_CHOICE"
+                else
+                    TARGET_DIR="$TOOLKIT_DIR"
+                fi
+                ;;
         esac
     fi
 fi
 
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 echo -e "\n[*] Target Project Root: ${CYAN}${TARGET_DIR}${RESET}"
+
+# Detect existing AI folders in project root
+DETECTED_FOLDERS=()
+if [ -d "${TARGET_DIR}/.github" ]; then DETECTED_FOLDERS+=(".github (GitHub Copilot)"); fi
+if [ -d "${TARGET_DIR}/.claude" ]; then DETECTED_FOLDERS+=(".claude (Claude Code)"); fi
+if [ -d "${TARGET_DIR}/.gemini" ]; then DETECTED_FOLDERS+=(".gemini (Gemini Code Assist)"); fi
+if [ -d "${TARGET_DIR}/.agents" ]; then DETECTED_FOLDERS+=(".agents (Universal Antigravity)"); fi
+
+if [ ${#DETECTED_FOLDERS[@]} -gt 0 ]; then
+    echo -e "  [i] Detected existing AI folders in project root: ${GREEN}${DETECTED_FOLDERS[*]}${RESET}"
+fi
 
 # --------------------------------------------------------------------
 # 2. Select AI Provider(s) - Supports Multi-Select
@@ -135,16 +175,16 @@ if [ -z "$RAW_SELECTION" ]; then
 
     echo -e "\n${YELLOW}Select AI Coding Assistant(s):${RESET}"
     echo -e "  Tip: You can select multiple assistants separated by commas (e.g. 1,2,5)"
-    echo -e "  [1] GitHub Copilot (Agents in .github/agents/ & .github/skills/) ${GREEN}(Default - Press Enter)${RESET}"
-    echo -e "  [2] Claude Code (Skills in .claude/skills/ & CLAUDE.md)"
-    echo -e "  [3] Cursor (Agent Rules in .cursor/rules/)"
-    echo -e "  [4] Windsurf (Agent Rules in .windsurf/rules/)"
-    echo -e "  [5] Gemini Code Assist / Antigravity (.agents/ & GEMINI.md)"
+    echo -e "  [1] GitHub Copilot (.github/skills/ & .github/agents/) ${GREEN}(Default - Press Enter)${RESET}"
+    echo -e "  [2] Claude Code (.claude/skills/ & CLAUDE.md)"
+    echo -e "  [3] Gemini Code Assist / Antigravity (.gemini/skills/ & .agents/)"
+    echo -e "  [4] Cursor (Agent Rules in .cursor/rules/)"
+    echo -e "  [5] Windsurf (Agent Rules in .windsurf/rules/)"
     echo -e "  [6] OpenAI Codex / ChatGPT Dev Tools (.chatgpt/)"
-    echo -e "  [7] Universal Setup (All Providers)"
+    echo -e "  [7] Universal Setup (All Providers & Folders)"
     echo -e "  [U] Toggle Action to UNINSTALL / REMOVE"
     echo ""
-    read -p "Enter selection [e.g. 1,2,5 or U] (Default: 1): " USER_INPUT
+    read -p "Enter selection [e.g. 1,2,3 or U] (Default: 1): " USER_INPUT
 
     if [ "$USER_INPUT" = "u" ] || [ "$USER_INPUT" = "U" ]; then
         ACTION="remove"
@@ -167,12 +207,12 @@ else
         case "$token" in
             1|copilot)  SELECTED_LLMS+=("copilot") ;;
             2|claude)   SELECTED_LLMS+=("claude") ;;
-            3|cursor)   SELECTED_LLMS+=("cursor") ;;
-            4|windsurf) SELECTED_LLMS+=("windsurf") ;;
-            5|gemini)   SELECTED_LLMS+=("gemini") ;;
+            3|5|gemini) SELECTED_LLMS+=("gemini") ;;
+            4|cursor)   SELECTED_LLMS+=("cursor") ;;
+            windsurf)   SELECTED_LLMS+=("windsurf") ;;
             6|codex)    SELECTED_LLMS+=("codex") ;;
             7|all)
-                SELECTED_LLMS=("copilot" "claude" "cursor" "windsurf" "gemini" "codex")
+                SELECTED_LLMS=("copilot" "claude" "gemini" "cursor" "windsurf" "codex")
                 break
                 ;;
         esac
@@ -246,7 +286,8 @@ sync_agents_folder() {
 
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.agents/skills/"
+                mkdir -p "${TARGET_DIR}/.agents/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.agents/skills/${skill}/"
             fi
         done
 
@@ -286,7 +327,8 @@ install_copilot() {
         mkdir -p "${TARGET_DIR}/.github/skills"
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.github/skills/"
+                mkdir -p "${TARGET_DIR}/.github/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.github/skills/${skill}/"
             fi
         done
     fi
@@ -304,7 +346,8 @@ install_claude() {
         mkdir -p "${TARGET_DIR}/.claude/skills"
         for skill in "${TOOLKIT_SKILLS[@]}"; do
             if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
-                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.claude/skills/"
+                mkdir -p "${TARGET_DIR}/.claude/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.claude/skills/${skill}/"
             fi
         done
 
@@ -342,9 +385,22 @@ install_windsurf() {
 }
 
 install_gemini() {
-    echo "[*] Configuring Gemini / Antigravity (${TARGET_DIR}/GEMINI.md)..."
+    echo "[*] Configuring Gemini Code Assist & Antigravity (${TARGET_DIR}/.gemini & GEMINI.md)..."
     local content=$(cat "${TEMPLATE_DIR}/GEMINI.md")
     safe_merge_file "${TARGET_DIR}/GEMINI.md" "$content"
+
+    if [ "$TARGET_DIR" != "$TOOLKIT_DIR" ]; then
+        mkdir -p "${TARGET_DIR}/.gemini/skills"
+        for skill in "${TOOLKIT_SKILLS[@]}"; do
+            if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
+                mkdir -p "${TARGET_DIR}/.gemini/skills/${skill}"
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}/"* "${TARGET_DIR}/.gemini/skills/${skill}/"
+            fi
+        done
+    fi
+
+    echo -e "  ${GREEN}[+] Gemini Skills active in: ${TARGET_DIR}/.gemini/skills${RESET}"
+    echo -e "  ${GREEN}[+] Gemini Rules active in: ${TARGET_DIR}/GEMINI.md${RESET}"
 }
 
 install_codex() {
@@ -389,8 +445,9 @@ remove_windsurf() {
 }
 
 remove_gemini() {
-    echo "[*] Removing Gemini Code Assist..."
+    echo "[*] Removing Gemini Code Assist & Antigravity..."
     remove_merge_file "${TARGET_DIR}/GEMINI.md"
+    rm -rf "${TARGET_DIR}/.gemini/skills"
 }
 
 remove_codex() {
@@ -423,19 +480,28 @@ if [ "$ACTION" = "install" ]; then
     echo -e "Configured Assistants: ${GREEN}${SELECTED_LLMS[*]}${RESET}"
     echo -e "To remove anytime, run: ./install.sh --remove --target \"$TARGET_DIR\""
     echo ""
-    echo -e "${YELLOW}RECOMMENDED COMMANDS TO RUN (READ-ONLY / DRY-RUN FIRST):${RESET}"
+    # Determine primary relative skills paths based on selected folders
+    PRIMARY_REL=".agents/skills"
+    for s in "${SELECTED_LLMS[@]}"; do
+        if [ "$s" = "copilot" ]; then PRIMARY_REL=".github/skills"; break; fi
+        if [ "$s" = "claude" ];  then PRIMARY_REL=".claude/skills"; break; fi
+        if [ "$s" = "gemini" ];  then PRIMARY_REL=".gemini/skills"; break; fi
+    done
+
+    echo -e "${YELLOW}RECOMMENDED COMMANDS (RELATIVE PATHS FROM YOUR PROJECT ROOT):${RESET}"
     echo "--------------------------------------------------------------------"
+    echo -e "Works on any system/OS in project root: ${CYAN}${TARGET_DIR}${RESET}\n"
     echo -e "${WHITE}1. Scan for php2shell & RCE vulnerabilities:${RESET}"
-    echo -e "${CYAN}   php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.${RESET}\n"
+    echo -e "${CYAN}   php ${PRIMARY_REL}/php2shell-fixer/scripts/php2shell-audit.php --path=.${RESET}\n"
     echo -e "${WHITE}2. Scan for OWASP Top 10 security flaws:${RESET}"
-    echo -e "${CYAN}   php .agents/skills/php-security-hardener/scripts/security-audit.php .${RESET}\n"
+    echo -e "${CYAN}   php ${PRIMARY_REL}/php-security-hardener/scripts/security-audit.php .${RESET}\n"
     echo -e "${WHITE}3. Preview safe PHP Core AST modernization (Dry Run up to PHP 8.5+):${RESET}"
-    echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php${RESET}\n"
+    echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=${PRIMARY_REL}/php-core-upgrader/scripts/rector-php-upgrade.php${RESET}\n"
     echo -e "${WHITE}4. Preview Framework upgrade plan (Laravel 8 -> 12+ / Latest):${RESET}"
-    echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php${RESET}\n"
+    echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=${PRIMARY_REL}/laravel-upgrader/scripts/rector-laravel.php${RESET}\n"
     echo -e "${WHITE}5. Run static analysis deprecation audit:${RESET}"
-    echo -e "${CYAN}   vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon${RESET}\n"
-    echo -e "${YELLOW}OR INVOKE YOUR AGENTS DIRECTLY:${RESET}"
+    echo -e "${CYAN}   vendor/bin/phpstan analyse -c ${PRIMARY_REL}/php-core-upgrader/scripts/phpstan.neon${RESET}\n"
+    echo -e "${YELLOW}OR INVOKE YOUR AGENTS DIRECTLY IN CHAT:${RESET}"
     echo -e "${WHITE}   Copilot: @php-upgrade-architect \"Plan migration to PHP 8.5 and audit php2shell\"${RESET}"
     echo -e "${WHITE}   Claude:  /php-audit and /php-upgrade${RESET}"
     echo -e "${WHITE}   Cursor/Gemini: \"Audit this codebase for php2shell vulnerabilities\"${RESET}"

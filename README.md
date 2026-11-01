@@ -157,7 +157,7 @@ This repository integrates 3 Antigravity subagents ready to handle your workflow
 
 ## 🚀 Quick Start & Multi-LLM Setup
 
-The toolkit includes native, zero-dependency installation scripts for **Windows, Linux, and macOS**. You can select your preferred AI assistant with **GitHub Copilot** as the default.
+The toolkit includes native, zero-dependency installation scripts for **Windows, Linux, and macOS**. It is **100% additive and non-destructive**: it never overwrites or replaces existing project folders (such as `.github`, `.cursor`, etc.), safely preserving your existing instructions while appending or updating the PHP upgrade and security capabilities.
 
 ### 1. Clone the Repository
 ```bash
@@ -174,12 +174,14 @@ cd php-upgrade-agent
 
 # Or specify your LLM directly:
 .\install.ps1 copilot     # GitHub Copilot (Default)
-.\install.ps1 claude      # Claude Code
 .\install.ps1 cursor      # Cursor AI
-.\install.ps1 gemini      # Google Gemini / Antigravity
-.\install.ps1 all         # Configure All Assistants
+.\install.ps1 claude      # Claude Code
+.\install.ps1 windsurf    # Windsurf
+.\install.ps1 gemini      # Gemini Code Assist / Antigravity
+.\install.ps1 codex       # OpenAI Codex / ChatGPT Dev Tools
+.\install.ps1 all         # Universal Setup (All Providers)
 ```
-*(You can also double-click or run `install.bat`)*
+*(You can also double-click `install.bat`)*
 
 #### On Linux & macOS (Bash):
 ```bash
@@ -190,23 +192,36 @@ chmod +x install.sh
 
 # Or specify your LLM directly:
 ./install.sh copilot      # GitHub Copilot (Default)
-./install.sh claude       # Claude Code
 ./install.sh cursor       # Cursor AI
-./install.sh gemini       # Google Gemini / Antigravity
-./install.sh all          # Configure All Assistants
+./install.sh claude       # Claude Code
+./install.sh windsurf     # Windsurf
+./install.sh gemini       # Gemini Code Assist / Antigravity
+./install.sh codex        # OpenAI Codex / ChatGPT Dev Tools
+./install.sh all          # Universal Setup (All Providers)
 ```
 
 ---
 
-### 3. Install Modernization Engines & Run Security Scans
-```bash
-composer install
+### 3. Immediate Recommended Commands After Installation
 
-# Check php2shell RCE vectors
+Once the installer finishes, it automatically outputs ready-to-run commands for your project:
+
+```bash
+# 1. Scan for php2shell & RCE vulnerabilities:
 php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
 
-# Check OWASP Top 10 security flaws
+# 2. Scan for OWASP Top 10 security flaws (SQLi, SSRF, Deserialization):
 php .agents/skills/php-security-hardener/scripts/security-audit.php .
+
+# 3. Preview safe PHP Core AST modernization (Up to PHP 8.4):
+vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php
+
+# 4. Preview Framework upgrade plan (Laravel 8 -> 12):
+vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
+
+# 5. Run static analysis deprecation audit:
+vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon
+```
 
 # Check Composer security advisories
 composer audit

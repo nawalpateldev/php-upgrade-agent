@@ -175,10 +175,14 @@ cd php-upgrade-agent
 
 #### On Windows (PowerShell or Command Prompt):
 ```powershell
-# Interactive menu (Press Enter for GitHub Copilot):
+# Interactive menu (Auto-detects project root or prompts):
 .\install.ps1
 
-# Or install for a specific assistant:
+# Install directly into your target project root:
+.\install.ps1 -TargetPath "..\my-php-project"
+.\install.ps1 install copilot -TargetPath "C:\development\my-app"
+
+# Or install for a specific assistant in current directory:
 .\install.ps1 install copilot     # GitHub Copilot (Default)
 .\install.ps1 install claude      # Claude Code (Plugin & Slash Commands)
 .\install.ps1 install cursor      # Cursor AI
@@ -193,10 +197,14 @@ cd php-upgrade-agent
 ```bash
 chmod +x install.sh
 
-# Interactive menu (Press Enter for GitHub Copilot):
+# Interactive menu (Auto-detects project root or prompts):
 ./install.sh
 
-# Or install for a specific assistant:
+# Install directly into your target project root:
+./install.sh --target "../my-php-project"
+./install.sh copilot --target "/var/www/my-app"
+
+# Or install for a specific assistant in current directory:
 ./install.sh copilot      # GitHub Copilot (Default)
 ./install.sh claude       # Claude Code
 ./install.sh cursor       # Cursor AI

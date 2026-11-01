@@ -1,174 +1,213 @@
-# PHP Upgrade & Modernization Agent Toolkit
+<div align="center">
 
-A production-grade, battle-tested agentic toolkit and skill suite designed to upgrade legacy PHP applications to the latest PHP version (PHP 8.2, 8.3, 8.4+) and modernize frameworks (**Laravel 8 to 12+**, **Symfony 4.4/5.4 to 6.4/7.x+**, and **CodeIgniter 3 to 4+**) without breaking application core business logic.
+# 🚀 PHP Upgrade Agent & Security Hardener
+### Automated Zero-Breakage PHP Upgrades, Framework Migrations & php2shell Security Fixes
 
-Includes automated vulnerability scanning and remediation for the **October 2026 php2shell** remote code execution (RCE) vectors and OWASP Top 10 vulnerabilities.
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4%2B-blue.svg)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-8%20%E2%86%92%2012%2B-red.svg)](https://laravel.com/)
+[![Symfony](https://img.shields.io/badge/Symfony-4.4%2F5.4%20%E2%86%92%206.4%2F7.x-black.svg)](https://symfony.com/)
+[![CodeIgniter](https://img.shields.io/badge/CodeIgniter-3%20%E2%86%92%204%2B-orange.svg)](https://codeigniter.com/)
+[![Security](https://img.shields.io/badge/php2shell-Remediated-brightgreen.svg)](#-php2shell-fix-october-2026--rce-defense)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**The all-in-one AI-driven modernization toolkit to upgrade legacy PHP applications to the latest PHP 8.4+ without breaking core business logic, migrate frameworks (Laravel 8 to 12, Symfony 4/5 to 7, CodeIgniter 3 to 4), fix critical PHP vulnerabilities, and neutralize October 2026 php2shell RCE exploits.**
+
+[Quick Start](#-quick-start) • [PHP Core Upgrade](#-php-core-upgrade-56--84) • [Framework Migrations](#-framework-upgrade-suite) • [php2shell Fix](#-php2shell-fix-october-2026--rce-defense) • [PHP Vulnerabilities Fix](#-php-vulnerabilities-fix-owasp-top-10) • [FAQ](#-frequently-asked-questions-seo-faq)
+
+</div>
 
 ---
 
-## Architecture Overview
+## 🔍 Why This Toolkit?
 
-```mermaid
-graph TD
-    User([User / Developer]) --> Master[php-upgrade-architect Agent]
-    
-    subgraph Specialized Subagents
-        Master --> Arch[php-upgrade-architect]
-        Master --> Frame[framework-migrator]
-        Master --> P2S[php2shell-remediator]
-    end
+Upgrading legacy PHP or executing major framework leaps (like Laravel 8 to 12) often causes runtime breakages, fatal type errors, deprecation crashes, and security regressions. 
 
-    subgraph Modular Antigravity Skills
-        Arch --> S1[php-core-upgrader]
-        Frame --> S2[laravel-upgrader]
-        Frame --> S3[symfony-upgrader]
-        Frame --> S4[codeigniter-upgrader]
-        P2S --> S5[php2shell-fixer]
-        P2S --> S6[php-security-hardener]
-    end
+**PHP Upgrade Agent** solves this through **Deterministic AST Refactoring, Strict Static Analysis, and Defensive Security Engineering**:
+* **Zero Core Logic Breakage**: Refactors code using Abstract Syntax Trees (AST) while preserving 100% behavioral parity.
+* **Safe Stepwise Jumps**: Bridges major versions incrementally (`PHP 5.6 -> 7.4 -> 8.0 -> 8.2 -> 8.3 -> 8.4`).
+* **Deep Framework Modernization**: Automates breaking changes across Laravel (Flysystem 3, Symfony Mailer, `bootstrap/app.php`), Symfony (Attributes, unified Authenticator), and CodeIgniter (PSR-4 namespacing).
+* **Automated Security Fixes**: Native SAST scanners detect and remediate OWASP Top 10 flaws and Remote Code Execution (RCE).
+* **Comprehensive php2shell Neutralization**: Complete defense-in-depth patch against CGI argument injection (CVE-2024-4577 & 2026 Unicode bypasses), stream filter chains (`php://filter`), and webshell drops.
 
-    subgraph Tooling & Automation
-        S1 --> Rector[Rector AST Engine]
-        S1 --> PHPStan[PHPStan Strict Engine]
-        S5 --> P2SScanner[php2shell-audit.py Scanner]
-        S5 --> IniHarden[Hardened php.ini & Webserver Rules]
-    end
+---
+
+## 🛡️ php2shell Fix (October 2026 & RCE Defense)
+
+The **`php2shell-fixer`** skill provides automated detection and remediation for PHP-to-shell Remote Code Execution attack surfaces:
+
+### 1. CGI Argument Injection (CVE-2024-4577 & 2026 Unicode Bypasses)
+* **Threat**: Exploitation of Windows Best-Fit mapping and soft hyphens (`%ad%64`, `%u00ad`) passing command switches like `-d allow_url_include=1 -d auto_prepend_file=php://input` to `php-cgi`.
+* **Fix Applied**: Perimeter Nginx and Apache rewrite rules blocking argument switches and Unicode bypasses, coupled with runtime argument normalization.
+
+### 2. Stream Filter Chain RCE (`php://filter`)
+* **Threat**: Maliciously crafted iconv sequence filters (`convert.iconv.*`) in dynamic `include`/`require` triggering memory manipulation and arbitrary shell creation.
+* **Fix Applied**: AST-based static path whitelisting and setting `allow_url_include = Off` in [php-hardened.ini](.agents/skills/php2shell-fixer/scripts/php-hardened.ini).
+
+### 3. Shell Execution Primitives Replacement
+* **Threat**: Direct calls to `exec()`, `passthru()`, `shell_exec()`, `system()`, `proc_open()`, or backticks with unsanitized parameters.
+* **Fix Applied**: Automated conversion to parameterized `Symfony\Component\Process\Process` commands with strict argument arrays and whitelisting.
+
+### 4. Webshell Upload Hardening
+* **Threat**: Direct upload of `.php`, `.phtml`, `.phar`, `.htaccess`, or `.user.ini` files.
+* **Fix Applied**: Files stored outside webroot (`/var/app_storage/uploads`), randomized UUID naming, MIME & magic-byte verification with `finfo`, and server execution denial.
+
+#### Run the php2shell Scanner:
+```bash
+# Native PHP scanner (instant execution):
+php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
+
+# Or Python SAST scanner:
+python .agents/skills/php2shell-fixer/scripts/php2shell-audit.py --path=.
 ```
 
 ---
 
-## 1. Specialized Autonomous Agents
+## 🔒 PHP Vulnerabilities Fix (OWASP Top 10)
 
-The toolkit provides three specialized agents ready for invocation via `invoke_subagent`:
+The **`php-security-hardener`** skill provides automated identification and repair for common PHP security vulnerabilities:
 
-| Agent | Role & Capabilities |
-|---|---|
-| **`php-upgrade-architect`** | Master modernization orchestrator. Audits legacy codebases, checks PHP extension and Composer compatibility, plans staged upgrade paths, configures Rector/PHPStan, and guarantees behavioral parity. |
-| **`framework-migrator`** | Framework migration specialist. Manages breaking changes across major version leaps: **Laravel 8 -> 12**, **Symfony 4.4/5.4 -> 7.x**, and **CodeIgniter 3 -> 4**. |
-| **`php2shell-remediator`** | Security RCE specialist. Scans, detects, and neutralizes PHP-to-shell exploit chains, the **October 2026 php2shell** attack vectors, stream filter chains, and dynamic execution hazards. |
+| Vulnerability | Automated Fix Pattern | Skill Reference |
+|---|---|---|
+| **SQL Injection (SQLi)** | Parameterized PDO statements & strict ORM query bindings (no raw string interpolation) | [SQLi Remediation](.agents/skills/php-security-hardener/SKILL.md#step-2-sql-injection-remediation) |
+| **Server-Side Request Forgery (SSRF)** | IP address validation blocking private/reserved ranges (`FILTER_FLAG_NO_PRIV_RANGE`, metadata `169.254.169.254`) | [SSRF Hardening](.agents/skills/php-security-hardener/SKILL.md#step-3-server-side-request-forgery-ssrf-hardening) |
+| **Insecure Deserialization** | Replaces `unserialize()` with `json_decode()` or cryptographically signed HMAC payloads | [Deserialization Guide](.agents/skills/php2shell-fixer/references/oct-2026-php2shell-cves.md#3-deserialization-pop-gadgets-to-shell) |
+| **Weak Cryptography** | Migrates legacy `md5()` / `sha1()` passwords to `PASSWORD_ARGON2ID` and pseudo-random numbers to `random_bytes()` | [Crypto Guide](.agents/skills/php-security-hardener/SKILL.md#step-4-cryptography--password-hashing) |
+| **Vulnerable Dependencies** | Automated Composer advisory scanner via `composer audit` and `roave/security-advisories` | [Composer Audit](.agents/skills/php-security-hardener/SKILL.md#step-1-composer-dependency-audit) |
 
----
-
-## 2. Comprehensive Skills Catalog
-
-All skills reside in `.agents/skills/` following the Antigravity skill specification:
-
-### [1. php-core-upgrader](./.agents/skills/php-core-upgrader/SKILL.md)
-- **Target**: Legacy PHP (5.6, 7.0-7.4, 8.0, 8.1, 8.2) to PHP 8.3 / 8.4+.
-- **Key Mitigations**:
-  - Deprecated dynamic properties: Automates `#[\AllowDynamicProperties]` bridge or explicit typed properties.
-  - Undefined array keys & variables: Null-coalescing and `isset()` safety transforms.
-  - Type strictness: `#[\ReturnTypeWillChange]` on core interfaces (`Iterator`, `ArrayAccess`, `JsonSerializable`).
-  - PHP 8.4 parameter nullability fixes (`?Type $param = null`).
-- **Assets**:
-  - [Rector Configuration](./.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php)
-  - [PHPStan Strict Configuration](./.agents/skills/php-core-upgrader/scripts/phpstan.neon)
-  - [Breaking Changes Reference](./.agents/skills/php-core-upgrader/references/php-breaking-changes.md)
-
-### [2. laravel-upgrader](./.agents/skills/laravel-upgrader/SKILL.md)
-- **Target**: Staged upgrades from **Laravel 8 through 9, 10, 11, and 12+**.
-- **Key Mitigations**:
-  - **Laravel 8 -> 9**: Flysystem 1 to 3 migration (`League\Flysystem\FilesystemOperator`, exception handling on disk writes), SwiftMailer to Symfony Mailer.
-  - **Laravel 9 -> 10**: `$dates` array to `$casts`, native PHP return types in service providers and controllers.
-  - **Laravel 10 -> 11**: Streamlined `bootstrap/app.php` routing and middleware configuration, removal of monolithic `Kernel.php` and `RouteServiceProvider`.
-  - **Laravel 11 -> 12**: Concurrency API, strict attribute casts, and updated ecosystem packages.
-- **Assets**:
-  - [Laravel Rector Sets](./.agents/skills/laravel-upgrader/scripts/rector-laravel.php)
-  - [Laravel 8-12 Breakage Reference](./.agents/skills/laravel-upgrader/references/laravel-8-to-12-breakages.md)
-
-### [3. symfony-upgrader](./.agents/skills/symfony-upgrader/SKILL.md)
-- **Target**: Symfony 4.4 / 5.4 LTS to Symfony 6.4 LTS and 7.x+.
-- **Key Mitigations**:
-  - Migration of Doctrine annotations (`@ORM\Column`) and routing annotations (`@Route`) to native PHP 8 attributes (`#[ORM\Column]`, `#[Route]`).
-  - Replacement of legacy Guard authenticators (`GuardAuthenticatorInterface`) with the unified `AuthenticatorInterface` and `Passport` system.
-  - Dependency injection autowiring and strict return types.
-- **Assets**:
-  - [Symfony Rector Config](./.agents/skills/symfony-upgrader/scripts/rector-symfony.php)
-  - [Symfony Migration Checklist](./.agents/skills/symfony-upgrader/references/symfony-migration-checklist.md)
-
-### [4. codeigniter-upgrader](./.agents/skills/codeigniter-upgrader/SKILL.md)
-- **Target**: CodeIgniter 3 to CodeIgniter 4+.
-- **Key Mitigations**:
-  - Translates CI3 monolithic super-object (`$this->load`, `$this->input`, `$this->db`) into PSR-4 namespaced architecture (`App\Controllers`, `App\Models`, `Services::request()`).
-  - Converts procedural views and models to typed CI4 classes.
-- **Assets**:
-  - [Automated AST Converter](./.agents/skills/codeigniter-upgrader/scripts/ci3-to-ci4-migrator.php)
-  - [CI3 to CI4 API Mapping](./.agents/skills/codeigniter-upgrader/references/ci3-to-ci4-mapping.md)
-
-### [5. php2shell-fixer](./.agents/skills/php2shell-fixer/SKILL.md)
-- **Target**: Identifies, blocks, and eliminates all PHP-to-shell RCE attack surfaces and **October 2026 php2shell** vectors.
-- **Threat Vectors Addressed**:
-  - **CGI Argument Injection (CVE-2024-4577 & 2026 Unicode / Best-Fit Bypasses)**: Neutralizes query string injections (`%ad%64`, `-d allow_url_include=1`) targeting `php-cgi`.
-  - **Stream Filter Chains (`php://filter`)**: Fixes filter chain memory corruption and RCE through dynamic inclusions.
-  - **Command Injection Primitives**: Eliminates unsanitized `exec()`, `passthru()`, `system()`, and backtick execution; replaces with secure parameterized process execution (`Symfony\Component\Process\Process`).
-  - **Webshell Uploads**: Strict MIME and magic byte verification, storing files outside public webroots, and execution denial directives.
-  - **Insecure Deserialization**: Eliminates `unserialize()` gadget chains and `phar://` triggers.
-- **Assets**:
-  - [php2shell SAST Scanner Script](./.agents/skills/php2shell-fixer/scripts/php2shell-audit.py)
-  - [Production Hardened php.ini](./.agents/skills/php2shell-fixer/scripts/php-hardened.ini)
-  - [Nginx & Apache Hardening Rules](./.agents/skills/php2shell-fixer/scripts/webserver-hardened.conf)
-  - [Threat Intel Briefing](./.agents/skills/php2shell-fixer/references/oct-2026-php2shell-cves.md)
-
-### [6. php-security-hardener](./.agents/skills/php-security-hardener/SKILL.md)
-- **Target**: OWASP Top 10 for PHP and Composer dependency vulnerabilities.
-- **Key Mitigations**:
-  - SQL Injection prevention with prepared statements and parameter binding.
-  - SSRF protection with IP range filters (`FILTER_FLAG_NO_PRIV_RANGE`).
-  - Cryptographic upgrade to `PASSWORD_ARGON2ID` and `random_bytes()`.
-  - Composer security advisories integration (`composer audit`, `roave/security-advisories`).
-- **Assets**:
-  - [Security Audit Scanner](./.agents/skills/php-security-hardener/scripts/security-audit.php)
-  - [OWASP Security Checklist](./.agents/skills/php-security-hardener/references/security-checklist.md)
+#### Run the Security Audit:
+```bash
+php .agents/skills/php-security-hardener/scripts/security-audit.php .
+```
 
 ---
 
-## 3. Quick Start & Execution Guide
+## ⚡ PHP Core Upgrade (5.6 → 8.4+)
 
-### Step 1: Install Modernization Tooling
-Install the required static analysis and refactoring engines:
+The **`php-core-upgrader`** skill handles all major breaking changes across modern PHP engines:
+
+* **PHP 8.0**:
+  * Undefined array key warnings converted to null-coalescing (`$arr['key'] ?? null`).
+  * Non-strict string/number comparisons corrected.
+* **PHP 8.1**:
+  * Passing `null` to non-nullable internal functions sanitized (`strlen((string)$str)`).
+  * Implements `#[\ReturnTypeWillChange]` on `Iterator`, `ArrayAccess`, and `JsonSerializable`.
+* **PHP 8.2**:
+  * Dynamic property deprecation mitigated with `#[\AllowDynamicProperties]` or typed properties.
+  * `${var}` string interpolation upgraded to `{$var}`.
+* **PHP 8.3 & 8.4+**:
+  * Typed class constants and dynamic class constant fetches.
+  * Implicit nullable parameter types (`string $param = null`) refactored to explicit `?string $param = null`.
+
+#### Run Rector AST PHP Upgrade:
+```bash
+# Preview changes safely
+vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php
+
+# Apply changes
+vendor/bin/rector process --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php
+
+# Validate with strict static analysis
+vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon
+```
+
+---
+
+## 📦 Framework Upgrade Suite
+
+```
+[Laravel 8.x]  ──►  [Laravel 9.x]  ──►  [Laravel 10.x] ──►  [Laravel 11.x] ──►  [Laravel 12.x]
+[Symfony 4.4]  ──►  [Symfony 5.4]  ──►  [Symfony 6.4 LTS] ──────────────────►  [Symfony 7.x]
+[CodeIgniter 3.x Monolith] ──────────►  [CodeIgniter 4.x PSR-4 Namespaced]
+```
+
+### 1. Laravel 8 to Laravel 12+ ([Guide](.agents/skills/laravel-upgrader/SKILL.md))
+- **Laravel 8 to 9**: Flysystem 1 -> 3 migration (`Storage::missing()`, `UnableToWriteFile`), SwiftMailer -> Symfony Mailer, anonymous migrations.
+- **Laravel 9 to 10**: `$dates` array -> `$casts`, native return type declarations in userland classes.
+- **Laravel 10 to 11**: Streamlined skeleton (`bootstrap/app.php`), kernel/route-provider consolidation, model `casts()` method.
+- **Laravel 11 to 12**: Concurrency API, strict attribute casts, modern package compatibility.
+```bash
+vendor/bin/rector process --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
+```
+
+### 2. Symfony 4.4 / 5.4 to 6.4 & 7.x+ ([Guide](.agents/skills/symfony-upgrader/SKILL.md))
+- Doctrine `@ORM` & routing `@Route` annotations converted to native PHP 8 attributes (`#[ORM\Column]`, `#[Route]`).
+- Replaces legacy Guard authenticators (`GuardAuthenticatorInterface`) with the unified `AuthenticatorInterface` and `Passport` system.
+```bash
+vendor/bin/rector process --config=.agents/skills/symfony-upgrader/scripts/rector-symfony.php
+```
+
+### 3. CodeIgniter 3 to 4+ ([Guide](.agents/skills/codeigniter-upgrader/SKILL.md))
+- Automated migration from CI3 global super-objects (`$this->load`, `$this->input`, `$this->db`) to CI4 PSR-4 namespaced architecture (`App\Controllers`, `App\Models`, `Services::request()`).
+- Document root isolation to `public/index.php`.
+```bash
+php .agents/skills/codeigniter-upgrader/scripts/ci3-to-ci4-migrator.php --src=legacy_ci3/application --dest=modern_ci4/app
+```
+
+---
+
+## 🤖 Autonomous Subagents
+
+This repository integrates 3 Antigravity subagents ready to handle your workflows:
+
+1. **`php-upgrade-architect`**: Orchestrates pre-flight audits, compatibility checks, Rector AST transformations, and static analysis pipelines.
+2. **`framework-migrator`**: Specializes in major framework leaps (Laravel 8-12, Symfony 4-7, CodeIgniter 3-4).
+3. **`php2shell-remediator`**: Specializes in RCE detection, php2shell neutralizing, and server runtime hardening.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+```bash
+git clone git@github.com:nawalpateldev/php-upgrade-agent.git
+cd php-upgrade-agent
+```
+
+### 2. Install Modernization Engines
 ```bash
 composer install
 ```
 
-### Step 2: Audit for php2shell Vulnerabilities
-Execute the php2shell SAST scanner on your application code:
+### 3. Run Vulnerability & php2shell Scans
 ```bash
-python .agents/skills/php2shell-fixer/scripts/php2shell-audit.py --path=./app
-```
+# Check php2shell RCE vectors
+php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
 
-### Step 3: Check Composer Dependency Vulnerabilities
-```bash
+# Check OWASP Top 10 security flaws
+php .agents/skills/php-security-hardener/scripts/security-audit.php .
+
+# Check Composer security advisories
 composer audit
 ```
 
-### Step 4: Run Safe AST Refactoring (Dry Run First)
+### 4. Apply Safe PHP Upgrades (Dry Run)
 ```bash
-# Preview PHP Core modernization diffs
 vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php
-
-# For Laravel:
-vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
-
-# For Symfony:
-vendor/bin/rector process --dry-run --config=.agents/skills/symfony-upgrader/scripts/rector-symfony.php
-```
-
-### Step 5: Validate with Strict Static Analysis
-```bash
-vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon
-```
-
-### Step 6: Verify Behavioral Tests
-```bash
-vendor/bin/phpunit
-# or for Laravel:
-php artisan test
 ```
 
 ---
 
-## 4. Safety & Invariant Guarantees
+## ❓ Frequently Asked Questions (SEO FAQ)
 
-1. **Non-breaking Business Logic**: All refactorings are AST-level and type-checked before commit.
-2. **Stepwise Version Transitions**: Strict adherence to incremental hops prevents cascading breakages.
-3. **Hardened Perimeter**: Web server and `php.ini` lockdown prevents remote shell exploitation even if legacy code retains latent dynamic calls.
+<details>
+<summary><b>How do I upgrade PHP legacy without breaking core business logic?</b></summary>
+Never jump across multiple major versions in one step. Use our <code>php-core-upgrader</code> to migrate step-by-step (e.g. 7.4 -> 8.0 -> 8.2 -> 8.4). Run baseline unit tests before refactoring, execute Rector AST rules, and enforce static analysis via PHPStan to verify type safety.
+</details>
+
+<details>
+<summary><b>What is the October 2026 php2shell vulnerability and how do I fix it?</b></summary>
+The October 2026 php2shell vulnerabilities encompass advanced CGI argument injection bypasses (soft-hyphen / Unicode best-fit mapping on <code>php-cgi</code> like <code>%ad%64</code>), iconv stream filter chain memory corruption in <code>php://filter</code>, and arbitrary webshell file uploads. This toolkit fixes it through web server perimeter blocking in <code>webserver-hardened.conf</code>, runtime restriction in <code>php-hardened.ini</code>, and source code remediation.
+</details>
+
+<details>
+<summary><b>Can I upgrade Laravel 8 directly to Laravel 12?</b></summary>
+Direct jumps risk breaking Flysystem storage drivers, email transports, and application kernels. Follow our staged Laravel guide (8 -> 9 -> 10 -> 11 -> 12) using the pre-configured <code>rector-laravel.php</code> to automate syntax adjustments and preserve database and auth integrity.
+</details>
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+
+Developed with ❤️ by **[Nawal Patel](https://github.com/nawalpateldev)**.

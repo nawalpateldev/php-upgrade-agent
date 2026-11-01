@@ -12,12 +12,18 @@ use RectorLaravel\Set\LaravelSetList;
  * Automatically resolves the highest available Laravel level set to prevent obsolescence.
  */
 return static function (RectorConfig $rectorConfig): void {
-    $rectorConfig->paths([
-        __DIR__ . '/../../../../app',
-        __DIR__ . '/../../../../routes',
-        __DIR__ . '/../../../../database',
-        __DIR__ . '/../../../../config',
-    ]);
+    $projectRoot = dirname(__DIR__, 4);
+    $candidatePaths = [
+        $projectRoot . '/app',
+        $projectRoot . '/routes',
+        $projectRoot . '/database',
+        $projectRoot . '/config',
+    ];
+    $paths = array_values(array_filter($candidatePaths, 'is_dir'));
+    if (empty($paths)) {
+        $paths = [$projectRoot];
+    }
+    $rectorConfig->paths($paths);
 
     $rectorConfig->skip([
         '*/storage/*',

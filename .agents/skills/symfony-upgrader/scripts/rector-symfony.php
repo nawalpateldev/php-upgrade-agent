@@ -11,10 +11,16 @@ use Rector\Doctrine\Set\DoctrineSetList;
  * Rector configuration for automated Symfony 5.4 -> 6.4 -> 7.x upgrades.
  */
 return static function (RectorConfig $rectorConfig): void {
-    $rectorConfig->paths([
-        __DIR__ . '/../../../../src',
-        __DIR__ . '/../../../../config',
-    ]);
+    $projectRoot = dirname(__DIR__, 4);
+    $candidatePaths = [
+        $projectRoot . '/src',
+        $projectRoot . '/config',
+    ];
+    $paths = array_values(array_filter($candidatePaths, 'is_dir'));
+    if (empty($paths)) {
+        $paths = [$projectRoot];
+    }
+    $rectorConfig->paths($paths);
 
     $rectorConfig->skip([
         '*/var/*',

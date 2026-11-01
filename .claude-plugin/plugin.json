@@ -1,0 +1,37 @@
+{
+  "name": "php-upgrade-agent",
+  "version": "1.1.0",
+  "description": "Zero-breakage PHP 8.5+ upgrades, Laravel 8-12+ framework migrations, and October 2026 php2shell RCE remediation plugin for Claude Code.",
+  "author": "Nawal Patel",
+  "homepage": "https://github.com/nawalpateldev/php-upgrade-agent",
+  "entry": "CLAUDE.md",
+  "rules": [
+    ".agents/rules/AGENTS.md"
+  ],
+  "skills": [
+    ".agents/skills/php-core-upgrader",
+    ".agents/skills/laravel-upgrader",
+    ".agents/skills/symfony-upgrader",
+    ".agents/skills/codeigniter-upgrader",
+    ".agents/skills/php2shell-fixer",
+    ".agents/skills/php-security-hardener"
+  ],
+  "commands": {
+    "php-audit": {
+      "description": "Run php2shell RCE and OWASP security vulnerability scan",
+      "command": "php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=."
+    },
+    "php-upgrade": {
+      "description": "Preview safe PHP Core AST modernization up to PHP 8.5+ / Latest",
+      "command": "vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php"
+    },
+    "laravel-upgrade": {
+      "description": "Preview Laravel framework upgrade plan up to Laravel 12+ / Latest",
+      "command": "vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php"
+    },
+    "phpstan-check": {
+      "description": "Run strict PHPStan static analysis deprecation audit",
+      "command": "vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon"
+    }
+  }
+}

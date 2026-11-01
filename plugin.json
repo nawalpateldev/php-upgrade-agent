@@ -1,0 +1,26 @@
+{
+  "name": "php-upgrade-agent",
+  "version": "1.1.0",
+  "description": "Zero-breakage PHP modernization up to PHP 8.5.12+, Laravel 8-12+ framework migrations, and October 2026 php2shell RCE remediation.",
+  "author": {
+    "name": "Nawal Patel",
+    "url": "https://github.com/nawalpateldev"
+  },
+  "homepage": "https://github.com/nawalpateldev/php-upgrade-agent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nawalpateldev/php-upgrade-agent.git"
+  },
+  "keywords": [
+    "php",
+    "php8",
+    "laravel",
+    "symfony",
+    "codeigniter",
+    "php2shell",
+    "rce",
+    "security",
+    "rector",
+    "phpstan"
+  ]
+}

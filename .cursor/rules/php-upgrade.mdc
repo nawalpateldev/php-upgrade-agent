@@ -1,4 +1,4 @@
-# Cursor AI Rules for PHP Modernization
+﻿# Cursor AI Rules for PHP Modernization
 - Never refactor code purely for aesthetic reasons during upgrades.
 - Preserve 100% input/output parity of all existing services and API endpoints.
 - Stepwise jumps only: PHP 7.4 -> 8.0 -> 8.2 -> 8.4 | Laravel 8 -> 9 -> 10 -> 11 -> 12.

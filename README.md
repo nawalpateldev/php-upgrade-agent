@@ -159,9 +159,11 @@ This repository integrates 3 Antigravity subagents ready to handle your workflow
 
 ---
 
-## 🚀 Quick Start & Multi-LLM Setup
+## 🔌 Plugin & Multi-LLM Manager (Easy Add & Remove)
 
-The toolkit includes native, zero-dependency installation scripts for **Windows, Linux, and macOS**. It is **100% additive and non-destructive**: it never overwrites or replaces existing project folders (such as `.github`, `.cursor`, etc.), safely preserving your existing instructions while appending or updating the PHP upgrade and security capabilities.
+The toolkit is packaged as a **standardized AI Plugin** compatible with **Claude Code**, **Antigravity / Gemini**, **GitHub Copilot**, **Cursor**, **Windsurf**, and **OpenAI Codex**.
+
+You can **add or cleanly remove/uninstall** the plugin at any time without affecting your project's existing code or instructions:
 
 ### 1. Clone the Repository
 ```bash
@@ -169,21 +171,21 @@ git clone git@github.com:nawalpateldev/php-upgrade-agent.git
 cd php-upgrade-agent
 ```
 
-### 2. Run the Native Installer
+### 2. Add / Install Plugin Adapters
 
 #### On Windows (PowerShell or Command Prompt):
 ```powershell
 # Interactive menu (Press Enter for GitHub Copilot):
 .\install.ps1
 
-# Or specify your LLM directly:
-.\install.ps1 copilot     # GitHub Copilot (Default)
-.\install.ps1 cursor      # Cursor AI
-.\install.ps1 claude      # Claude Code
-.\install.ps1 windsurf    # Windsurf
-.\install.ps1 gemini      # Gemini Code Assist / Antigravity
-.\install.ps1 codex       # OpenAI Codex / ChatGPT Dev Tools
-.\install.ps1 all         # Universal Setup (All Providers)
+# Or install for a specific assistant:
+.\install.ps1 install copilot     # GitHub Copilot (Default)
+.\install.ps1 install claude      # Claude Code (Plugin & Slash Commands)
+.\install.ps1 install cursor      # Cursor AI
+.\install.ps1 install windsurf    # Windsurf
+.\install.ps1 install gemini      # Gemini Code Assist / Antigravity
+.\install.ps1 install codex       # OpenAI Codex / ChatGPT Dev Tools
+.\install.ps1 install all         # Universal Setup (All Providers)
 ```
 *(You can also double-click `install.bat`)*
 
@@ -194,19 +196,52 @@ chmod +x install.sh
 # Interactive menu (Press Enter for GitHub Copilot):
 ./install.sh
 
-# Or specify your LLM directly:
+# Or install for a specific assistant:
 ./install.sh copilot      # GitHub Copilot (Default)
-./install.sh cursor       # Cursor AI
 ./install.sh claude       # Claude Code
+./install.sh cursor       # Cursor AI
 ./install.sh windsurf     # Windsurf
-./install.sh gemini       # Gemini Code Assist / Antigravity
-./install.sh codex        # OpenAI Codex / ChatGPT Dev Tools
+./install.sh gemini       # Gemini Code Assist
+./install.sh codex        # OpenAI Codex / ChatGPT
 ./install.sh all          # Universal Setup (All Providers)
 ```
 
 ---
 
-### 3. Immediate Recommended Commands After Installation
+### 3. Remove / Uninstall Plugin (Clean Teardown Anytime)
+
+If you ever wish to remove the plugin adapters, run the uninstaller. It strips out the added directives while **preserving all your other custom settings**:
+
+```powershell
+# On Windows:
+.\install.ps1 -Uninstall
+# Or remove for a specific assistant:
+.\install.ps1 remove claude
+.\install.ps1 remove copilot
+.\install.ps1 remove all
+
+# On Linux & macOS:
+./install.sh --remove
+# Or remove for a specific assistant:
+./install.sh remove claude
+./install.sh remove copilot
+./install.sh remove all
+```
+
+---
+
+### 4. Claude Code Plugin & Slash Commands
+
+When Claude Code is selected, the plugin manifest (`.claude-plugin/plugin.json`) enables built-in slash commands directly inside your Claude terminal:
+
+* `/php-audit` — Scan codebase for October 2026 php2shell and OWASP vulnerabilities.
+* `/php-upgrade` — Dry-run AST refactoring for PHP 8.5+ without breaking logic.
+* `/laravel-upgrade` — Preview Laravel 8 -> 12+ framework migration plan.
+* `/php2shell-fix` — Apply automated security patches for RCE vectors.
+
+---
+
+### 5. Immediate Recommended Commands After Installation
 
 Once the installer finishes, it automatically outputs ready-to-run commands for your project:
 

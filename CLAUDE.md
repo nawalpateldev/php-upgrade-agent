@@ -1,4 +1,4 @@
-# Claude Code Project Guidelines: PHP Modernization & Security
+﻿# Claude Code Project Guidelines: PHP Modernization & Security
 
 ## Mission
 Safely upgrade legacy PHP to PHP 8.4+ and frameworks (Laravel 8-12, Symfony 4-7, CodeIgniter 3-4) without breaking core application logic. Enforce full OWASP Top 10 hardening and neutralize October 2026 php2shell RCE vectors.
@@ -42,4 +42,6 @@ Safely upgrade legacy PHP to PHP 8.5+ (and upcoming latest) and frameworks (Lara
 Read and follow `.agents/rules/AGENTS.md` before applying any code transformations.
 
 <!-- PHP-UPGRADE-AGENT-END -->
+
+
 

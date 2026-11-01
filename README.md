@@ -161,9 +161,15 @@ This repository integrates 3 Antigravity subagents ready to handle your workflow
 
 ## 🔌 Plugin & Multi-LLM Manager (Easy Add & Remove)
 
-The toolkit is packaged as a **standardized AI Plugin** compatible with **Claude Code**, **Antigravity / Gemini**, **GitHub Copilot**, **Cursor**, **Windsurf**, and **OpenAI Codex**.
+The toolkit is packaged as a **standardized AI Plugin and Agents Suite** compatible with **GitHub Copilot**, **Claude Code**, **Cursor**, **Windsurf**, **Gemini Code Assist**, and **OpenAI Codex**.
 
-You can **add or cleanly remove/uninstall** the plugin at any time without affecting your project's existing code or instructions:
+### 🛡️ Safety & Non-Destructive Invariants
+1. **Zero Code Touch**: Never touches, alters, or refactors your PHP source files (`*.php`), application configs, or databases during installation.
+2. **Zero Project File Deletion**: Never deletes any project files or directories.
+3. **Additive & Demarcated**: In shared instruction files (e.g. `copilot-instructions.md`, `CLAUDE.md`, `.cursorrules`), all additions are safely isolated between `<!-- PHP-UPGRADE-AGENT-START -->` and `<!-- PHP-UPGRADE-AGENT-END -->`. All existing project instructions are 100% preserved.
+4. **Native Agents & Skills**: Installs specialized subagents (`.github/agents/`) and native skills (`.github/skills/`, `.claude/skills/`, `.agents/skills/`), rather than basic prompt wrappers.
+
+---
 
 ### 1. Clone the Repository
 ```bash
@@ -171,20 +177,21 @@ git clone git@github.com:nawalpateldev/php-upgrade-agent.git
 cd php-upgrade-agent
 ```
 
-### 2. Add / Install Plugin Adapters
+### 2. Add / Install Plugin Adapters (Supports Multi-Select)
+
+You can select **single or multiple assistants** simultaneously (e.g. `copilot,claude,gemini` or entering `1,2,5` in the interactive prompt):
 
 #### On Windows (PowerShell or Command Prompt):
 ```powershell
-# Interactive menu (Auto-detects project root or prompts):
+# Interactive menu (Auto-detects project root; multi-select like 1,2,5):
 .\install.ps1
 
-# Install directly into your target project root:
-.\install.ps1 -TargetPath "..\my-php-project"
-.\install.ps1 install copilot -TargetPath "C:\development\my-app"
+# Multi-select installation into target project root:
+.\install.ps1 install "copilot,claude,gemini" -TargetPath "..\my-php-project"
 
-# Or install for a specific assistant in current directory:
+# Or install for a specific assistant:
 .\install.ps1 install copilot     # GitHub Copilot (Default)
-.\install.ps1 install claude      # Claude Code (Plugin & Slash Commands)
+.\install.ps1 install claude      # Claude Code (Skills, Commands, Plugin)
 .\install.ps1 install cursor      # Cursor AI
 .\install.ps1 install windsurf    # Windsurf
 .\install.ps1 install gemini      # Gemini Code Assist / Antigravity
@@ -197,14 +204,13 @@ cd php-upgrade-agent
 ```bash
 chmod +x install.sh
 
-# Interactive menu (Auto-detects project root or prompts):
+# Interactive menu (Multi-select like 1,2,5):
 ./install.sh
 
-# Install directly into your target project root:
-./install.sh --target "../my-php-project"
-./install.sh copilot --target "/var/www/my-app"
+# Multi-select installation into target project root:
+./install.sh "copilot,claude,gemini" --target "../my-php-project"
 
-# Or install for a specific assistant in current directory:
+# Or install for a specific assistant:
 ./install.sh copilot      # GitHub Copilot (Default)
 ./install.sh claude       # Claude Code
 ./install.sh cursor       # Cursor AI

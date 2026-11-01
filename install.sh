@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ====================================================================
 # Universal AI Agent & Plugin Manager (Linux & macOS)
-# Installs or removes PHP Upgrade Agent into your Project Root
-# Supports: Copilot, Claude, Cursor, Windsurf, Gemini, Codex
+# Installs or removes PHP Upgrade Agents & Skills into your Project Root
+# Supports Multi-Select (e.g. Copilot, Claude, Gemini in one run)
 # ====================================================================
 
 set -e
@@ -17,10 +17,32 @@ WHITE='\033[1;37m'
 RESET='\033[0m'
 
 ACTION="install"
-SELECTION=""
+RAW_SELECTION=""
 TARGET_DIR=""
 
-# Parse flags
+TOOLKIT_SKILLS=(
+    "php-core-upgrader"
+    "laravel-upgrader"
+    "symfony-upgrader"
+    "codeigniter-upgrader"
+    "php2shell-fixer"
+    "php-security-hardener"
+)
+
+TOOLKIT_AGENTS=(
+    "php-upgrade-architect.agent.json"
+    "framework-migrator.agent.json"
+    "php2shell-remediator.agent.json"
+)
+
+TOOLKIT_CLAUDE_COMMANDS=(
+    "php-audit.md"
+    "php-upgrade.md"
+    "laravel-upgrade.md"
+    "php2shell-fix.md"
+)
+
+# Parse CLI flags
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --remove|--uninstall|remove|uninstall)
@@ -31,13 +53,11 @@ while [[ $# -gt 0 ]]; do
             TARGET_DIR="$2"
             shift 2
             ;;
-        copilot|claude|cursor|windsurf|gemini|codex|all)
-            SELECTION="$1"
-            shift
-            ;;
         *)
             if [ -d "$1" ]; then
                 TARGET_DIR="$1"
+            else
+                RAW_SELECTION="$1"
             fi
             shift
             ;;
@@ -45,10 +65,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${CYAN}====================================================================${RESET}"
-echo -e "${CYAN}   PHP Upgrade Agent & Security Hardener - Project Plugin Installer ${RESET}"
+echo -e "${CYAN}   PHP Upgrade Agent & Skills - Multi-LLM Plugin Installer          ${RESET}"
 echo -e "${CYAN}====================================================================${RESET}"
-echo "Installs agent skills, rules, and AI adapters directly into your Project Root."
-echo ""
+echo -e "${GREEN}[SAFETY INVARIANT] Never modifies your PHP code, database, or composer files.${RESET}\n"
 
 # --------------------------------------------------------------------
 # 1. Detect & Resolve Target Project Root
@@ -105,46 +124,66 @@ TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 echo -e "\n[*] Target Project Root: ${CYAN}${TARGET_DIR}${RESET}"
 
 # --------------------------------------------------------------------
-# 2. Select AI Provider
+# 2. Select AI Provider(s) - Supports Multi-Select
 # --------------------------------------------------------------------
-if [ -z "$SELECTION" ]; then
+if [ -z "$RAW_SELECTION" ]; then
     if [ "$ACTION" = "install" ]; then
-        echo -e "Current Action: ${GREEN}INSTALL / ADD PLUGIN${RESET}"
+        echo -e "Current Action: ${GREEN}INSTALL / ADD AGENTS & SKILLS${RESET}"
     else
-        echo -e "Current Action: ${YELLOW}REMOVE / UNINSTALL PLUGIN${RESET}"
+        echo -e "Current Action: ${YELLOW}REMOVE / UNINSTALL${RESET}"
     fi
 
-    echo -e "\n${YELLOW}Select AI Coding Assistant:${RESET}"
-    echo -e "  [1] GitHub Copilot (.github/) ${GREEN}(Default - Press Enter)${RESET}"
-    echo "  [2] Claude Code (.claude/ & CLAUDE.md)"
-    echo "  [3] Cursor (.cursor/ & .cursorrules)"
-    echo "  [4] Windsurf (.windsurf/ & .windsurfrules)"
-    echo "  [5] Gemini Code Assist (GEMINI.md)"
-    echo "  [6] OpenAI Codex / ChatGPT (.chatgpt/)"
-    echo "  [7] Universal Setup (All Providers)"
-    echo "  [U] Toggle Action to UNINSTALL / REMOVE"
+    echo -e "\n${YELLOW}Select AI Coding Assistant(s):${RESET}"
+    echo -e "  Tip: You can select multiple assistants separated by commas (e.g. 1,2,5)"
+    echo -e "  [1] GitHub Copilot (Agents in .github/agents/ & .github/skills/) ${GREEN}(Default - Press Enter)${RESET}"
+    echo -e "  [2] Claude Code (Skills in .claude/skills/ & CLAUDE.md)"
+    echo -e "  [3] Cursor (Agent Rules in .cursor/rules/)"
+    echo -e "  [4] Windsurf (Agent Rules in .windsurf/rules/)"
+    echo -e "  [5] Gemini Code Assist / Antigravity (.agents/ & GEMINI.md)"
+    echo -e "  [6] OpenAI Codex / ChatGPT Dev Tools (.chatgpt/)"
+    echo -e "  [7] Universal Setup (All Providers)"
+    echo -e "  [U] Toggle Action to UNINSTALL / REMOVE"
     echo ""
-    read -p "Enter selection [1-7 or U] (Default: 1): " USER_INPUT
+    read -p "Enter selection [e.g. 1,2,5 or U] (Default: 1): " USER_INPUT
 
     if [ "$USER_INPUT" = "u" ] || [ "$USER_INPUT" = "U" ]; then
         ACTION="remove"
         echo -e "\n${YELLOW}[!] Action switched to: REMOVE / UNINSTALL${RESET}"
-        read -p "Select provider to remove [1-7] (Default: 7/all): " USER_INPUT
+        read -p "Select provider(s) to remove [e.g. 1,2 or 7] (Default: 7/all): " USER_INPUT
         if [ -z "$USER_INPUT" ]; then USER_INPUT="7"; fi
     fi
 
-    case "$USER_INPUT" in
-        2) SELECTION="claude" ;;
-        3) SELECTION="cursor" ;;
-        4) SELECTION="windsurf" ;;
-        5) SELECTION="gemini" ;;
-        6) SELECTION="codex" ;;
-        7) SELECTION="all" ;;
-        *) SELECTION="copilot" ;;
-    esac
+    RAW_SELECTION="$USER_INPUT"
 fi
 
-SELECTION=$(echo "$SELECTION" | tr '[:upper:]' '[:lower:]')
+# Parse Multi-Select Input
+SELECTED_LLMS=()
+if [ -z "$RAW_SELECTION" ] || [ "$RAW_SELECTION" = "1" ]; then
+    SELECTED_LLMS+=("copilot")
+else
+    # Replace commas/spaces with newlines to iterate
+    TOKENS=$(echo "$RAW_SELECTION" | tr ',;' ' ')
+    for token in $TOKENS; do
+        case "$token" in
+            1|copilot)  SELECTED_LLMS+=("copilot") ;;
+            2|claude)   SELECTED_LLMS+=("claude") ;;
+            3|cursor)   SELECTED_LLMS+=("cursor") ;;
+            4|windsurf) SELECTED_LLMS+=("windsurf") ;;
+            5|gemini)   SELECTED_LLMS+=("gemini") ;;
+            6|codex)    SELECTED_LLMS+=("codex") ;;
+            7|all)
+                SELECTED_LLMS=("copilot" "claude" "cursor" "windsurf" "gemini" "codex")
+                break
+                ;;
+        esac
+    done
+fi
+
+if [ ${#SELECTED_LLMS[@]} -eq 0 ]; then
+    SELECTED_LLMS+=("copilot")
+fi
+
+echo -e "\n[*] Selected Assistant(s) to ${ACTION}: ${GREEN}${SELECTED_LLMS[*]}${RESET}"
 
 # --------------------------------------------------------------------
 # 3. Helpers: Safe Content Merger & Cleaner
@@ -190,63 +229,104 @@ remove_merge_file() {
     if [ -f "$target_file" ]; then
         if grep -q "$start_marker" "$target_file"; then
             sed -i "/${start_marker}/,/${end_marker}/d" "$target_file"
-            if [ ! -s "$target_file" ] || [ -z "$(tr -d '[:space:]' < "$target_file")" ]; then
-                rm -f "$target_file"
-                echo -e "  ${YELLOW}[-] Removed ${target_file} (was only containing plugin configuration)${RESET}"
-            else
-                echo -e "  ${YELLOW}[-] Cleaned ${target_file} (removed plugin block, preserved your other settings)${RESET}"
-            fi
+            echo -e "  ${YELLOW}[-] Cleaned ${target_file} (removed agent block, other settings untouched)${RESET}"
         fi
     fi
 }
 
 # --------------------------------------------------------------------
-# 4. Copy Core Skills & Rules to Project Root (if different directory)
+# 4. Sync Canonical Skills & Rules into Project Root
 # --------------------------------------------------------------------
 sync_agents_folder() {
     if [ "$TARGET_DIR" != "$TOOLKIT_DIR" ]; then
-        echo "[*] Syncing .agents/ skills and rules into project root..."
-        mkdir -p "${TARGET_DIR}/.agents"
-        cp -r "${TOOLKIT_DIR}/.agents/skills" "${TARGET_DIR}/.agents/"
-        cp -r "${TOOLKIT_DIR}/.agents/rules" "${TARGET_DIR}/.agents/"
-        echo -e "  ${GREEN}[+] .agents/ synced to project root: ${TARGET_DIR}/.agents${RESET}"
+        echo "[*] Syncing PHP modernization skills & agents into ${TARGET_DIR}/.agents..."
+        mkdir -p "${TARGET_DIR}/.agents/skills"
+        mkdir -p "${TARGET_DIR}/.agents/rules"
+        mkdir -p "${TARGET_DIR}/.agents/agents"
+
+        for skill in "${TOOLKIT_SKILLS[@]}"; do
+            if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.agents/skills/"
+            fi
+        done
+
+        if [ -d "${TOOLKIT_DIR}/.agents/agents" ]; then
+            cp -r "${TOOLKIT_DIR}/.agents/agents/"* "${TARGET_DIR}/.agents/agents/"
+        fi
+
+        if [ -f "${TOOLKIT_DIR}/.agents/rules/AGENTS.md" ]; then
+            if [ -f "${TARGET_DIR}/.agents/rules/AGENTS.md" ]; then
+                local rule_content=$(cat "${TOOLKIT_DIR}/.agents/rules/AGENTS.md")
+                safe_merge_file "${TARGET_DIR}/.agents/rules/AGENTS.md" "$rule_content"
+            else
+                cp "${TOOLKIT_DIR}/.agents/rules/AGENTS.md" "${TARGET_DIR}/.agents/rules/AGENTS.md"
+            fi
+        fi
+
+        echo -e "  ${GREEN}[+] Specific PHP upgrade skills & agents synced to ${TARGET_DIR}/.agents${RESET}"
     fi
 }
 
+# --------------------------------------------------------------------
+# 5. Agent & Skill Setup Routines
+# --------------------------------------------------------------------
 install_copilot() {
-    echo "[*] Configuring GitHub Copilot adapter in project root (${TARGET_DIR}/.github)..."
+    echo "[*] Configuring GitHub Copilot Agents & Skills (${TARGET_DIR}/.github)..."
     local content=$(cat "${TEMPLATE_DIR}/copilot-instructions.md")
     safe_merge_file "${TARGET_DIR}/.github/copilot-instructions.md" "$content"
-    
-    if [ "$TARGET_DIR" != "$TOOLKIT_DIR" ] && [ -d "${TOOLKIT_DIR}/.github/prompts" ]; then
-        mkdir -p "${TARGET_DIR}/.github/prompts"
-        cp -r "${TOOLKIT_DIR}/.github/prompts/"* "${TARGET_DIR}/.github/prompts/"
-        echo -e "  ${GREEN}[+] Prompts installed into ${TARGET_DIR}/.github/prompts${RESET}"
+
+    if [ "$TARGET_DIR" != "$TOOLKIT_DIR" ]; then
+        mkdir -p "${TARGET_DIR}/.github/agents"
+        for agent in "${TOOLKIT_AGENTS[@]}"; do
+            if [ -f "${TOOLKIT_DIR}/.github/agents/${agent}" ]; then
+                cp "${TOOLKIT_DIR}/.github/agents/${agent}" "${TARGET_DIR}/.github/agents/"
+            fi
+        done
+
+        mkdir -p "${TARGET_DIR}/.github/skills"
+        for skill in "${TOOLKIT_SKILLS[@]}"; do
+            if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.github/skills/"
+            fi
+        done
     fi
+
+    echo -e "  ${GREEN}[+] Copilot Agents active in: ${TARGET_DIR}/.github/agents${RESET}"
+    echo -e "  ${GREEN}[+] Copilot Skills active in: ${TARGET_DIR}/.github/skills${RESET}"
 }
 
 install_claude() {
-    echo "[*] Configuring Claude Code plugin in project root (${TARGET_DIR}/.claude)..."
+    echo "[*] Configuring Claude Code Skills & Agents (${TARGET_DIR}/.claude)..."
     local content=$(cat "${TEMPLATE_DIR}/CLAUDE.md")
     safe_merge_file "${TARGET_DIR}/CLAUDE.md" "$content"
 
     if [ "$TARGET_DIR" != "$TOOLKIT_DIR" ]; then
+        mkdir -p "${TARGET_DIR}/.claude/skills"
+        for skill in "${TOOLKIT_SKILLS[@]}"; do
+            if [ -d "${TOOLKIT_DIR}/.agents/skills/${skill}" ]; then
+                cp -r "${TOOLKIT_DIR}/.agents/skills/${skill}" "${TARGET_DIR}/.claude/skills/"
+            fi
+        done
+
         mkdir -p "${TARGET_DIR}/.claude/commands"
-        if [ -d "${TOOLKIT_DIR}/.claude/commands" ]; then
-            cp -r "${TOOLKIT_DIR}/.claude/commands/"* "${TARGET_DIR}/.claude/commands/"
-            echo -e "  ${GREEN}[+] Slash commands installed into ${TARGET_DIR}/.claude/commands${RESET}"
-        fi
+        for cmd in "${TOOLKIT_CLAUDE_COMMANDS[@]}"; do
+            if [ -f "${TOOLKIT_DIR}/.claude/commands/${cmd}" ]; then
+                cp "${TOOLKIT_DIR}/.claude/commands/${cmd}" "${TARGET_DIR}/.claude/commands/"
+            fi
+        done
 
         mkdir -p "${TARGET_DIR}/.claude-plugin"
-        if [ -d "${TOOLKIT_DIR}/.claude-plugin" ]; then
-            cp -r "${TOOLKIT_DIR}/.claude-plugin/"* "${TARGET_DIR}/.claude-plugin/"
-            echo -e "  ${GREEN}[+] Plugin manifest installed into ${TARGET_DIR}/.claude-plugin/plugin.json${RESET}"
+        if [ -f "${TOOLKIT_DIR}/.claude-plugin/plugin.json" ]; then
+            cp "${TOOLKIT_DIR}/.claude-plugin/plugin.json" "${TARGET_DIR}/.claude-plugin/"
         fi
     fi
+
+    echo -e "  ${GREEN}[+] Claude Skills active in: ${TARGET_DIR}/.claude/skills${RESET}"
+    echo -e "  ${GREEN}[+] Claude Slash Commands active in: ${TARGET_DIR}/.claude/commands${RESET}"
 }
 
 install_cursor() {
-    echo "[*] Configuring Cursor adapter in project root (${TARGET_DIR}/.cursor)..."
+    echo "[*] Configuring Cursor Agent rules (${TARGET_DIR}/.cursor)..."
     local content=$(cat "${TEMPLATE_DIR}/cursorrules")
     safe_merge_file "${TARGET_DIR}/.cursorrules" "$content"
     mkdir -p "${TARGET_DIR}/.cursor/rules"
@@ -254,7 +334,7 @@ install_cursor() {
 }
 
 install_windsurf() {
-    echo "[*] Configuring Windsurf adapter in project root (${TARGET_DIR}/.windsurf)..."
+    echo "[*] Configuring Windsurf Agent rules (${TARGET_DIR}/.windsurf)..."
     local content=$(cat "${TEMPLATE_DIR}/windsurfrules")
     safe_merge_file "${TARGET_DIR}/.windsurfrules" "$content"
     mkdir -p "${TARGET_DIR}/.windsurf/rules"
@@ -262,120 +342,120 @@ install_windsurf() {
 }
 
 install_gemini() {
-    echo "[*] Configuring Gemini Code Assist in project root (${TARGET_DIR}/GEMINI.md)..."
+    echo "[*] Configuring Gemini / Antigravity (${TARGET_DIR}/GEMINI.md)..."
     local content=$(cat "${TEMPLATE_DIR}/GEMINI.md")
     safe_merge_file "${TARGET_DIR}/GEMINI.md" "$content"
 }
 
 install_codex() {
-    echo "[*] Configuring OpenAI Codex / ChatGPT in project root (${TARGET_DIR}/.chatgpt)..."
+    echo "[*] Configuring OpenAI Codex / ChatGPT (${TARGET_DIR}/.chatgpt)..."
     local content=$(cat "${TEMPLATE_DIR}/codex-instructions.md")
     mkdir -p "${TARGET_DIR}/.chatgpt"
     safe_merge_file "${TARGET_DIR}/.chatgpt/instructions.md" "$content"
 }
 
 remove_copilot() {
-    echo "[*] Removing GitHub Copilot adapter from ${TARGET_DIR}/.github..."
+    echo "[*] Removing GitHub Copilot Agents & Skills..."
     remove_merge_file "${TARGET_DIR}/.github/copilot-instructions.md"
+    for agent in "${TOOLKIT_AGENTS[@]}"; do
+        rm -f "${TARGET_DIR}/.github/agents/${agent}"
+    done
+    for skill in "${TOOLKIT_SKILLS[@]}"; do
+        rm -rf "${TARGET_DIR}/.github/skills/${skill}"
+    done
 }
 
 remove_claude() {
-    echo "[*] Removing Claude Code adapter from ${TARGET_DIR}..."
+    echo "[*] Removing Claude Code Skills & Commands..."
     remove_merge_file "${TARGET_DIR}/CLAUDE.md"
-    rm -f "${TARGET_DIR}/.claude/commands/php-audit.md" \
-          "${TARGET_DIR}/.claude/commands/php-upgrade.md" \
-          "${TARGET_DIR}/.claude/commands/laravel-upgrade.md" \
-          "${TARGET_DIR}/.claude/commands/php2shell-fix.md" 2>/dev/null || true
+    for skill in "${TOOLKIT_SKILLS[@]}"; do
+        rm -rf "${TARGET_DIR}/.claude/skills/${skill}"
+    done
+    for cmd in "${TOOLKIT_CLAUDE_COMMANDS[@]}"; do
+        rm -f "${TARGET_DIR}/.claude/commands/${cmd}"
+    done
 }
 
 remove_cursor() {
-    echo "[*] Removing Cursor adapter from ${TARGET_DIR}..."
+    echo "[*] Removing Cursor Agent rules..."
     remove_merge_file "${TARGET_DIR}/.cursorrules"
     remove_merge_file "${TARGET_DIR}/.cursor/rules/php-upgrade.mdc"
 }
 
 remove_windsurf() {
-    echo "[*] Removing Windsurf adapter from ${TARGET_DIR}..."
+    echo "[*] Removing Windsurf Agent rules..."
     remove_merge_file "${TARGET_DIR}/.windsurfrules"
     remove_merge_file "${TARGET_DIR}/.windsurf/rules/php-upgrade.md"
 }
 
 remove_gemini() {
-    echo "[*] Removing Gemini Code Assist adapter from ${TARGET_DIR}..."
+    echo "[*] Removing Gemini Code Assist..."
     remove_merge_file "${TARGET_DIR}/GEMINI.md"
 }
 
 remove_codex() {
-    echo "[*] Removing OpenAI Codex / ChatGPT adapter from ${TARGET_DIR}..."
+    echo "[*] Removing OpenAI Codex / ChatGPT..."
     remove_merge_file "${TARGET_DIR}/.chatgpt/instructions.md"
 }
 
+# --------------------------------------------------------------------
+# 6. Execute Action for All Selected LLMs
+# --------------------------------------------------------------------
 if [ "$ACTION" = "install" ]; then
     sync_agents_folder
 
-    case "$SELECTION" in
-        copilot)  install_copilot ;;
-        claude)   install_claude ;;
-        cursor)   install_cursor ;;
-        windsurf) install_windsurf ;;
-        gemini)   install_gemini ;;
-        codex)    install_codex ;;
-        all|*)
-            install_copilot
-            install_claude
-            install_cursor
-            install_windsurf
-            install_gemini
-            install_codex
-            ;;
-    esac
+    for selected in "${SELECTED_LLMS[@]}"; do
+        case "$selected" in
+            copilot)  install_copilot ;;
+            claude)   install_claude ;;
+            cursor)   install_cursor ;;
+            windsurf) install_windsurf ;;
+            gemini)   install_gemini ;;
+            codex)    install_codex ;;
+        esac
+    done
 
     echo ""
     echo -e "${GREEN}====================================================================${RESET}"
-    echo -e "${GREEN}   [+] PLUGIN INSTALLED: Project Root is Fully Configured!          ${RESET}"
+    echo -e "${GREEN}   [+] AGENTS & SKILLS ACTIVE: Zero Code Modified, All Installed!   ${RESET}"
     echo -e "${GREEN}====================================================================${RESET}"
     echo -e "Project Root: ${CYAN}${TARGET_DIR}${RESET}"
-    echo -e "Canonical rules and skills reside safely in: ${CYAN}${TARGET_DIR}/.agents/${RESET}"
-    echo "To remove anytime, run: ./install.sh --remove --target \"$TARGET_DIR\""
+    echo -e "Configured Assistants: ${GREEN}${SELECTED_LLMS[*]}${RESET}"
+    echo -e "To remove anytime, run: ./install.sh --remove --target \"$TARGET_DIR\""
     echo ""
-    echo -e "${YELLOW}🎯 RECOMMENDED NEXT STEPS & COMMANDS TO RUN NOW:${RESET}"
+    echo -e "${YELLOW}RECOMMENDED COMMANDS TO RUN (READ-ONLY / DRY-RUN FIRST):${RESET}"
     echo "--------------------------------------------------------------------"
     echo -e "${WHITE}1. Scan for php2shell & RCE vulnerabilities:${RESET}"
     echo -e "${CYAN}   php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.${RESET}\n"
-    echo -e "${WHITE}2. Scan for OWASP Top 10 security flaws (SQLi, SSRF, Deserialization):${RESET}"
+    echo -e "${WHITE}2. Scan for OWASP Top 10 security flaws:${RESET}"
     echo -e "${CYAN}   php .agents/skills/php-security-hardener/scripts/security-audit.php .${RESET}\n"
-    echo -e "${WHITE}3. Preview safe PHP Core AST modernization (Up to PHP 8.5+ / Latest):${RESET}"
+    echo -e "${WHITE}3. Preview safe PHP Core AST modernization (Dry Run up to PHP 8.5+):${RESET}"
     echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php${RESET}\n"
     echo -e "${WHITE}4. Preview Framework upgrade plan (Laravel 8 -> 12+ / Latest):${RESET}"
     echo -e "${CYAN}   vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php${RESET}\n"
     echo -e "${WHITE}5. Run static analysis deprecation audit:${RESET}"
     echo -e "${CYAN}   vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon${RESET}\n"
-    echo -e "${YELLOW}🤖 OR ASK YOUR AI ASSISTANT DIRECTLY:${RESET}"
-    echo -e "${WHITE}   \"Audit this codebase for php2shell vulnerabilities, check deprecations,${RESET}"
-    echo -e "${WHITE}    and generate a stepwise non-breaking PHP upgrade roadmap.\"${RESET}"
+    echo -e "${YELLOW}OR INVOKE YOUR AGENTS DIRECTLY:${RESET}"
+    echo -e "${WHITE}   Copilot: @php-upgrade-architect \"Plan migration to PHP 8.5 and audit php2shell\"${RESET}"
+    echo -e "${WHITE}   Claude:  /php-audit and /php-upgrade${RESET}"
+    echo -e "${WHITE}   Cursor/Gemini: \"Audit this codebase for php2shell vulnerabilities\"${RESET}"
     echo -e "${CYAN}====================================================================${RESET}\n"
 else
-    case "$SELECTION" in
-        copilot)  remove_copilot ;;
-        claude)   remove_claude ;;
-        cursor)   remove_cursor ;;
-        windsurf) remove_windsurf ;;
-        gemini)   remove_gemini ;;
-        codex)    remove_codex ;;
-        all|*)
-            remove_copilot
-            remove_claude
-            remove_cursor
-            remove_windsurf
-            remove_gemini
-            remove_codex
-            ;;
-    esac
+    for selected in "${SELECTED_LLMS[@]}"; do
+        case "$selected" in
+            copilot)  remove_copilot ;;
+            claude)   remove_claude ;;
+            cursor)   remove_cursor ;;
+            windsurf) remove_windsurf ;;
+            gemini)   remove_gemini ;;
+            codex)    remove_codex ;;
+        esac
+    done
 
     echo ""
     echo -e "${YELLOW}====================================================================${RESET}"
-    echo -e "${YELLOW}   [-] PLUGIN REMOVED: Cleanly uninstalled from Project Root!      ${RESET}"
+    echo -e "${YELLOW}   [-] UNINSTALL COMPLETE: Cleanly removed selected agent adapters! ${RESET}"
     echo -e "${YELLOW}====================================================================${RESET}"
     echo -e "Target: ${CYAN}${TARGET_DIR}${RESET}"
-    echo -e "To re-add anytime, simply run: ${GREEN}./install.sh --target \"$TARGET_DIR\"${RESET}\n"
+    echo -e "All your original configuration files, PHP code, and settings remain 100% intact.\n"
 fi

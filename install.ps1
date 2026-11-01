@@ -1,7 +1,14 @@
 # ====================================================================
 # Universal AI Agent & Plugin Manager (Windows PowerShell)
-# Installs or removes PHP Upgrade Agent into your Project Root
-# Supports: Copilot, Claude, Cursor, Windsurf, Gemini, Codex
+# Installs or removes PHP Upgrade Agents & Skills into your Project Root
+# Supports Multi-Select (e.g. Copilot, Claude, Gemini in one run)
+#
+# SAFETY GUARANTEES:
+# 1. NEVER touches or modifies any PHP source code (*.php) or application files.
+# 2. NEVER runs composer install on user's target project.
+# 3. NEVER deletes any user file, folder, or custom configurations.
+# 4. Strictly additive: all AI instructions are safely isolated between
+#    <!-- PHP-UPGRADE-AGENT-START --> and <!-- PHP-UPGRADE-AGENT-END --> markers.
 # ====================================================================
 
 [CmdletBinding()]
@@ -29,16 +36,39 @@ $toolkitDir = $PSScriptRoot
 $templateDir = Join-Path $toolkitDir ".agents\templates"
 
 Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host "   PHP Upgrade Agent & Security Hardener - Project Plugin Installer " -ForegroundColor Cyan
+Write-Host "   PHP Upgrade Agent & Skills - Multi-LLM Plugin Installer          " -ForegroundColor Cyan
 Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host "Installs agent skills, rules, and AI adapters directly into your Project Root.`n"
+Write-Host "[SAFETY INVARIANT] Never modifies your PHP code, database, or composer files.`n" -ForegroundColor Green
+
+# 6 Core Modernization & Security Skills
+$toolkitSkills = @(
+    "php-core-upgrader",
+    "laravel-upgrader",
+    "symfony-upgrader",
+    "codeigniter-upgrader",
+    "php2shell-fixer",
+    "php-security-hardener"
+)
+
+# 3 Specialized Agent Definitions
+$toolkitAgents = @(
+    "php-upgrade-architect.agent.json",
+    "framework-migrator.agent.json",
+    "php2shell-remediator.agent.json"
+)
+
+# Claude Slash Commands
+$toolkitClaudeCommands = @(
+    "php-audit.md",
+    "php-upgrade.md",
+    "laravel-upgrade.md",
+    "php2shell-fix.md"
+)
 
 # --------------------------------------------------------------------
 # 1. Detect & Resolve Target Project Root
 # --------------------------------------------------------------------
 $parentDir = Split-Path $toolkitDir -Parent
-
-# Check if parent directory looks like a PHP project (contains composer.json or artisan)
 $hasParentProject = $false
 if ($parentDir -and (Test-Path $parentDir)) {
     if ((Test-Path (Join-Path $parentDir "composer.json")) -or (Test-Path (Join-Path $parentDir "artisan"))) {
@@ -55,7 +85,7 @@ if ([string]::IsNullOrWhiteSpace($TargetPath)) {
         Write-Host "(Recommended - Press Enter)" -ForegroundColor Green
         Write-Host "  [2] Current Directory ($toolkitDir)"
         Write-Host "  [3] Custom Path"
-        $pathChoice = Read-Host "`nEnter selection [1-3] or type absolute path (Default: 1)"
+        $pathChoice = Read-Host "`nEnter selection [1-3 or path] (Default: 1)"
 
         if ([string]::IsNullOrWhiteSpace($pathChoice) -or $pathChoice -eq "1") {
             $TargetPath = $suggestedTarget
@@ -85,26 +115,26 @@ if ([string]::IsNullOrWhiteSpace($TargetPath)) {
     }
 }
 
-# Resolve to clean absolute path
 $targetDir = (Resolve-Path $TargetPath).Path
 Write-Host "`n[*] Target Project Root: " -NoNewline
 Write-Host "$targetDir" -ForegroundColor Cyan
 
 # --------------------------------------------------------------------
-# 2. Select AI Provider
+# 2. Select AI Provider(s) - Supports Multi-Select
 # --------------------------------------------------------------------
 $providers = @(
-    @{ Id = "copilot";  Name = "GitHub Copilot (.github/)";             Default = $true },
-    @{ Id = "claude";   Name = "Claude Code (.claude/ & CLAUDE.md)";     Default = $false },
-    @{ Id = "cursor";   Name = "Cursor (.cursor/ & .cursorrules)";       Default = $false },
-    @{ Id = "windsurf"; Name = "Windsurf (.windsurf/ & .windsurfrules)"; Default = $false },
-    @{ Id = "gemini";   Name = "Gemini Code Assist (GEMINI.md)";         Default = $false },
-    @{ Id = "codex";    Name = "OpenAI Codex / ChatGPT (.chatgpt/)";     Default = $false },
-    @{ Id = "all";      Name = "Universal Setup (All Providers)";        Default = $false }
+    @{ Id = "copilot";  Name = "GitHub Copilot (Agents in .github/agents/ & .github/skills/)"; Default = $true },
+    @{ Id = "claude";   Name = "Claude Code (Skills in .claude/skills/ & CLAUDE.md)";          Default = $false },
+    @{ Id = "cursor";   Name = "Cursor (Agent Rules in .cursor/rules/)";                      Default = $false },
+    @{ Id = "windsurf"; Name = "Windsurf (Agent Rules in .windsurf/rules/)";                  Default = $false },
+    @{ Id = "gemini";   Name = "Gemini Code Assist / Antigravity (.agents/ & GEMINI.md)";      Default = $false },
+    @{ Id = "codex";    Name = "OpenAI Codex / ChatGPT Dev Tools (.chatgpt/)";                 Default = $false },
+    @{ Id = "all";      Name = "Universal Setup (All Providers)";                             Default = $false }
 )
 
 if ([string]::IsNullOrWhiteSpace($LLM)) {
-    Write-Host "`nSelect AI Coding Assistant:" -ForegroundColor Yellow
+    Write-Host "`nSelect AI Coding Assistant(s):" -ForegroundColor Yellow
+    Write-Host "  Tip: You can select multiple assistants (e.g. 1,2,5 or 1 2 5)" -ForegroundColor DarkGray
     for ($i = 0; $i -lt $providers.Count; $i++) {
         $p = $providers[$i]
         $num = $i + 1
@@ -117,26 +147,47 @@ if ([string]::IsNullOrWhiteSpace($LLM)) {
     }
     Write-Host "  [U] Toggle Action to UNINSTALL / REMOVE"
     Write-Host ""
-    $choice = Read-Host "Enter selection [1-$($providers.Count) or U] (Default: 1)"
+    $rawChoice = Read-Host "Enter selection [e.g. 1,2,5 or press Enter for 1]"
 
-    if ($choice -ieq "u") {
+    if ($rawChoice -ieq "u") {
         $Action = "remove"
         Write-Host "`n[!] Action switched to: REMOVE / UNINSTALL" -ForegroundColor Yellow
-        $choice = Read-Host "Select provider to remove [1-$($providers.Count)] (Default: 7/all)"
-        if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "7" }
+        $rawChoice = Read-Host "Select provider(s) to remove [e.g. 1,2 or all] (Default: all)"
+        if ([string]::IsNullOrWhiteSpace($rawChoice)) { $rawChoice = "7" }
     }
 
-    if ([string]::IsNullOrWhiteSpace($choice) -or $choice -eq "1") {
-        $LLM = "copilot"
-    } elseif ($choice -match '^\d+$' -and [int]$choice -le $providers.Count -and [int]$choice -ge 1) {
-        $LLM = $providers[[int]$choice - 1].Id
-    } else {
-        $matched = $providers | Where-Object { $_.Id -ieq $choice }
-        if ($matched) { $LLM = $matched.Id } else { $LLM = "copilot" }
+    $LLM = $rawChoice
+}
+
+# Parse Multi-Select Input
+$selectedLLMs = @()
+if ([string]::IsNullOrWhiteSpace($LLM) -or $LLM.Trim() -eq "1") {
+    $selectedLLMs = @("copilot")
+} else {
+    $tokens = $LLM -split '[,;\s]+' | Where-Object { $_ -ne "" }
+    foreach ($token in $tokens) {
+        if ($token -match '^\d+$' -and [int]$token -ge 1 -and [int]$token -le $providers.Count) {
+            $selectedLLMs += $providers[[int]$token - 1].Id
+        } else {
+            $matched = $providers | Where-Object { $_.Id -ieq $token }
+            if ($matched) {
+                $selectedLLMs += $matched.Id
+            }
+        }
+    }
+    if ($selectedLLMs.Count -eq 0) {
+        $selectedLLMs = @("copilot")
     }
 }
 
-$LLM = $LLM.ToLower()
+if ($selectedLLMs -contains "all") {
+    $selectedLLMs = @("copilot", "claude", "cursor", "windsurf", "gemini", "codex")
+} else {
+    $selectedLLMs = $selectedLLMs | Select-Object -Unique
+}
+
+Write-Host "`n[*] Selected Assistant(s) to $($Action.ToUpper()): " -NoNewline
+Write-Host ($selectedLLMs -join ", ").ToUpper() -ForegroundColor Green
 
 # --------------------------------------------------------------------
 # 3. Helpers: Safe Content Merger & Cleaner
@@ -163,10 +214,10 @@ function Safe-Merge-Content {
             $pattern = "(?s)" + [regex]::Escape($startMarker) + ".*?" + [regex]::Escape($endMarker)
             $updated = [regex]::Replace($existing, $pattern, $wrappedContent.Trim())
             Set-Content -Path $FilePath -Value $updated -Encoding utf8
-            Write-Host "  [+] Updated $FilePath (safely updated existing block)" -ForegroundColor Green
+            Write-Host "  [+] Updated $FilePath (safely updated isolated agent block)" -ForegroundColor Green
         } else {
             Add-Content -Path $FilePath -Value $wrappedContent -Encoding utf8
-            Write-Host "  [+] Appended to existing $FilePath (preserved existing settings)" -ForegroundColor Green
+            Write-Host "  [+] Appended to existing $FilePath (your original settings are 100% preserved)" -ForegroundColor Green
         }
     } else {
         Set-Content -Path $FilePath -Value $wrappedContent.Trim() -Encoding utf8
@@ -187,87 +238,137 @@ function Remove-Merge-Content {
         if ($content -match [regex]::Escape($startMarker) -and $content -match [regex]::Escape($endMarker)) {
             $pattern = "(?s)\r?\n?" + [regex]::Escape($startMarker) + ".*?" + [regex]::Escape($endMarker) + "\r?\n?"
             $cleaned = [regex]::Replace($content, $pattern, "").Trim()
-            if ([string]::IsNullOrWhiteSpace($cleaned)) {
-                Remove-Item $FilePath -Force
-                Write-Host "  [-] Removed $FilePath (was only containing plugin configuration)" -ForegroundColor Yellow
-            } else {
-                Set-Content -Path $FilePath -Value $cleaned -Encoding utf8
-                Write-Host "  [-] Cleaned $FilePath (removed plugin block, preserved your other settings)" -ForegroundColor Yellow
-            }
+            Set-Content -Path $FilePath -Value $cleaned -Encoding utf8
+            Write-Host "  [-] Cleaned $FilePath (removed agent block, your other settings are untouched)" -ForegroundColor Yellow
         }
     }
 }
 
 # --------------------------------------------------------------------
-# 4. Copy Core Skills & Rules to Project Root (if different directory)
+# 4. Sync Canonical Skills & Rules into Project Root
 # --------------------------------------------------------------------
 function Sync-Agents-Folder {
     $targetAgents = Join-Path $targetDir ".agents"
     if ($targetDir -ne $toolkitDir) {
-        Write-Host "[*] Syncing .agents/ skills and rules into project root..."
-        if (-not (Test-Path $targetAgents)) { New-Item -ItemType Directory -Path $targetAgents -Force | Out-Null }
-        
-        $srcSkills = Join-Path $toolkitDir ".agents\skills"
+        Write-Host "[*] Syncing PHP modernization skills & agents into $targetAgents..."
         $destSkills = Join-Path $targetAgents "skills"
-        if (Test-Path $srcSkills) {
-            Copy-Item -Path $srcSkills -Destination $destSkills -Recurse -Force
-        }
-
-        $srcRules = Join-Path $toolkitDir ".agents\rules"
         $destRules = Join-Path $targetAgents "rules"
-        if (Test-Path $srcRules) {
-            Copy-Item -Path $srcRules -Destination $destRules -Recurse -Force
+        $destAgents = Join-Path $targetAgents "agents"
+
+        if (-not (Test-Path $destSkills)) { New-Item -ItemType Directory -Path $destSkills -Force | Out-Null }
+        if (-not (Test-Path $destRules)) { New-Item -ItemType Directory -Path $destRules -Force | Out-Null }
+        if (-not (Test-Path $destAgents)) { New-Item -ItemType Directory -Path $destAgents -Force | Out-Null }
+
+        # Sync 6 isolated skills
+        foreach ($skill in $toolkitSkills) {
+            $srcSkill = Join-Path $toolkitDir ".agents\skills\$skill"
+            $destSkill = Join-Path $destSkills $skill
+            if (Test-Path $srcSkill) {
+                Copy-Item -Path $srcSkill -Destination $destSkill -Recurse -Force
+            }
         }
 
-        Write-Host "  [+] .agents/ synced to project root: $targetAgents" -ForegroundColor Green
+        # Sync agent definitions
+        $srcAgents = Join-Path $toolkitDir ".agents\agents"
+        if (Test-Path $srcAgents) {
+            Copy-Item -Path "$srcAgents\*" -Destination $destAgents -Force
+        }
+
+        # Sync canonical rules safely
+        $srcRule = Join-Path $toolkitDir ".agents\rules\AGENTS.md"
+        $destRule = Join-Path $destRules "AGENTS.md"
+        if (Test-Path $srcRule) {
+            if (Test-Path $destRule) {
+                $ruleContent = Get-Content $srcRule -Raw -Encoding utf8
+                Safe-Merge-Content -FilePath $destRule -Content $ruleContent
+            } else {
+                Copy-Item -Path $srcRule -Destination $destRule -Force
+            }
+        }
+
+        Write-Host "  [+] Specific PHP upgrade skills & agents synced to $targetAgents" -ForegroundColor Green
     }
 }
 
 # --------------------------------------------------------------------
-# 5. Installation Routines (Targeting $targetDir)
+# 5. Agent & Skill Setup Routines for Selected Providers
 # --------------------------------------------------------------------
 function Install-Copilot {
-    Write-Host "[*] Configuring GitHub Copilot adapter in project root ($targetDir\.github)..."
+    Write-Host "[*] Configuring GitHub Copilot Agents & Skills ($targetDir\.github)..."
+    
+    # Ingest custom agent instructions
     $copilotContent = Get-Content (Join-Path $templateDir "copilot-instructions.md") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir ".github\copilot-instructions.md") -Content $copilotContent
 
-    # Copy prompts into project root .github/prompts (if different directory)
-    $srcPrompts = Join-Path $toolkitDir ".github\prompts"
-    $destPrompts = Join-Path $targetDir ".github\prompts"
-    if ($targetDir -ne $toolkitDir -and (Test-Path $srcPrompts)) {
-        if (-not (Test-Path $destPrompts)) { New-Item -ItemType Directory -Path $destPrompts -Force | Out-Null }
-        Copy-Item -Path "$srcPrompts\*" -Destination $destPrompts -Force
-        Write-Host "  [+] Prompts installed into $destPrompts" -ForegroundColor Green
+    if ($targetDir -ne $toolkitDir) {
+        # Deploy Copilot Agents (.github/agents/)
+        $destAgents = Join-Path $targetDir ".github\agents"
+        if (-not (Test-Path $destAgents)) { New-Item -ItemType Directory -Path $destAgents -Force | Out-Null }
+        foreach ($agent in $toolkitAgents) {
+            $src = Join-Path $toolkitDir ".github\agents\$agent"
+            if (Test-Path $src) {
+                Copy-Item -Path $src -Destination (Join-Path $destAgents $agent) -Force
+            }
+        }
+
+        # Deploy Copilot Skills (.github/skills/)
+        $destCopilotSkills = Join-Path $targetDir ".github\skills"
+        if (-not (Test-Path $destCopilotSkills)) { New-Item -ItemType Directory -Path $destCopilotSkills -Force | Out-Null }
+        foreach ($skill in $toolkitSkills) {
+            $src = Join-Path $toolkitDir ".agents\skills\$skill"
+            $dest = Join-Path $destCopilotSkills $skill
+            if (Test-Path $src) {
+                Copy-Item -Path $src -Destination $dest -Recurse -Force
+            }
+        }
     }
+
+    Write-Host "  [+] Copilot Agents active in: $targetDir\.github\agents" -ForegroundColor Green
+    Write-Host "  [+] Copilot Skills active in: $targetDir\.github\skills" -ForegroundColor Green
 }
 
 function Install-Claude {
-    Write-Host "[*] Configuring Claude Code plugin in project root ($targetDir\.claude)..."
+    Write-Host "[*] Configuring Claude Code Skills & Agents ($targetDir\.claude)..."
     $claudeContent = Get-Content (Join-Path $templateDir "CLAUDE.md") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir "CLAUDE.md") -Content $claudeContent
 
-    # Copy Claude commands and plugin manifest into project root (if different directory)
     if ($targetDir -ne $toolkitDir) {
-        $srcCommands = Join-Path $toolkitDir ".claude\commands"
-        $destCommands = Join-Path $targetDir ".claude\commands"
-        if (Test-Path $srcCommands) {
-            if (-not (Test-Path $destCommands)) { New-Item -ItemType Directory -Path $destCommands -Force | Out-Null }
-            Copy-Item -Path "$srcCommands\*" -Destination $destCommands -Force
-            Write-Host "  [+] Slash commands installed into $destCommands" -ForegroundColor Green
+        # Deploy Claude Code Native Skills (.claude/skills/)
+        $destClaudeSkills = Join-Path $targetDir ".claude\skills"
+        if (-not (Test-Path $destClaudeSkills)) { New-Item -ItemType Directory -Path $destClaudeSkills -Force | Out-Null }
+        foreach ($skill in $toolkitSkills) {
+            $src = Join-Path $toolkitDir ".agents\skills\$skill"
+            $dest = Join-Path $destClaudeSkills $skill
+            if (Test-Path $src) {
+                Copy-Item -Path $src -Destination $dest -Recurse -Force
+            }
         }
 
-        $srcClaudePlugin = Join-Path $toolkitDir ".claude-plugin"
-        $destClaudePlugin = Join-Path $targetDir ".claude-plugin"
-        if (Test-Path $srcClaudePlugin) {
-            if (-not (Test-Path $destClaudePlugin)) { New-Item -ItemType Directory -Path $destClaudePlugin -Force | Out-Null }
-            Copy-Item -Path "$srcClaudePlugin\*" -Destination $destClaudePlugin -Force
-            Write-Host "  [+] Plugin manifest installed into $destClaudePlugin\plugin.json" -ForegroundColor Green
+        # Deploy Claude Slash Commands (.claude/commands/)
+        $destCommands = Join-Path $targetDir ".claude\commands"
+        if (-not (Test-Path $destCommands)) { New-Item -ItemType Directory -Path $destCommands -Force | Out-Null }
+        foreach ($cmd in $toolkitClaudeCommands) {
+            $src = Join-Path $toolkitDir ".claude\commands\$cmd"
+            if (Test-Path $src) {
+                Copy-Item -Path $src -Destination (Join-Path $destCommands $cmd) -Force
+            }
+        }
+
+        # Deploy Claude Plugin Manifest (.claude-plugin/plugin.json)
+        $srcPlugin = Join-Path $toolkitDir ".claude-plugin\plugin.json"
+        $destPluginDir = Join-Path $targetDir ".claude-plugin"
+        if (Test-Path $srcPlugin) {
+            if (-not (Test-Path $destPluginDir)) { New-Item -ItemType Directory -Path $destPluginDir -Force | Out-Null }
+            Copy-Item -Path $srcPlugin -Destination (Join-Path $destPluginDir "plugin.json") -Force
         }
     }
+
+    Write-Host "  [+] Claude Skills active in: $targetDir\.claude\skills" -ForegroundColor Green
+    Write-Host "  [+] Claude Slash Commands active in: $targetDir\.claude\commands" -ForegroundColor Green
 }
 
 function Install-Cursor {
-    Write-Host "[*] Configuring Cursor adapter in project root ($targetDir\.cursor)..."
+    Write-Host "[*] Configuring Cursor Agent rules ($targetDir\.cursor)..."
     $cursorContent = Get-Content (Join-Path $templateDir "cursorrules") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir ".cursorrules") -Content $cursorContent
     $cursorRulesDir = Join-Path $targetDir ".cursor\rules"
@@ -276,7 +377,7 @@ function Install-Cursor {
 }
 
 function Install-Windsurf {
-    Write-Host "[*] Configuring Windsurf adapter in project root ($targetDir\.windsurf)..."
+    Write-Host "[*] Configuring Windsurf Agent rules ($targetDir\.windsurf)..."
     $windsurfContent = Get-Content (Join-Path $templateDir "windsurfrules") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir ".windsurfrules") -Content $windsurfContent
     $windsurfRulesDir = Join-Path $targetDir ".windsurf\rules"
@@ -285,13 +386,13 @@ function Install-Windsurf {
 }
 
 function Install-Gemini {
-    Write-Host "[*] Configuring Gemini Code Assist / Antigravity in project root ($targetDir\GEMINI.md)..."
+    Write-Host "[*] Configuring Gemini / Antigravity ($targetDir\GEMINI.md)..."
     $geminiContent = Get-Content (Join-Path $templateDir "GEMINI.md") -Raw -Encoding utf8
     Safe-Merge-Content -FilePath (Join-Path $targetDir "GEMINI.md") -Content $geminiContent
 }
 
 function Install-Codex {
-    Write-Host "[*] Configuring OpenAI Codex / ChatGPT in project root ($targetDir\.chatgpt)..."
+    Write-Host "[*] Configuring OpenAI Codex / ChatGPT ($targetDir\.chatgpt)..."
     $codexContent = Get-Content (Join-Path $templateDir "codex-instructions.md") -Raw -Encoding utf8
     $chatgptDir = Join-Path $targetDir ".chatgpt"
     if (-not (Test-Path $chatgptDir)) { New-Item -ItemType Directory -Path $chatgptDir -Force | Out-Null }
@@ -299,86 +400,93 @@ function Install-Codex {
 }
 
 # --------------------------------------------------------------------
-# 6. Removal Routines (Targeting $targetDir)
+# 6. Removal Routines
 # --------------------------------------------------------------------
 function Remove-Copilot {
-    Write-Host "[*] Removing GitHub Copilot adapter from $targetDir\.github..."
+    Write-Host "[*] Removing GitHub Copilot Agents & Skills..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".github\copilot-instructions.md")
+    $agentsDir = Join-Path $targetDir ".github\agents"
+    foreach ($agent in $toolkitAgents) {
+        $p = Join-Path $agentsDir $agent
+        if (Test-Path $p) { Remove-Item $p -Force }
+    }
+    $skillsDir = Join-Path $targetDir ".github\skills"
+    foreach ($skill in $toolkitSkills) {
+        $p = Join-Path $skillsDir $skill
+        if (Test-Path $p) { Remove-Item $p -Recurse -Force }
+    }
 }
 
 function Remove-Claude {
-    Write-Host "[*] Removing Claude Code adapter from $targetDir..."
+    Write-Host "[*] Removing Claude Code Skills & Commands..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir "CLAUDE.md")
+    $skillsDir = Join-Path $targetDir ".claude\skills"
+    foreach ($skill in $toolkitSkills) {
+        $p = Join-Path $skillsDir $skill
+        if (Test-Path $p) { Remove-Item $p -Recurse -Force }
+    }
     $cmdDir = Join-Path $targetDir ".claude\commands"
-    if (Test-Path $cmdDir) {
-        Remove-Item (Join-Path $cmdDir "php-audit.md") -ErrorAction SilentlyContinue
-        Remove-Item (Join-Path $cmdDir "php-upgrade.md") -ErrorAction SilentlyContinue
-        Remove-Item (Join-Path $cmdDir "laravel-upgrade.md") -ErrorAction SilentlyContinue
-        Remove-Item (Join-Path $cmdDir "php2shell-fix.md") -ErrorAction SilentlyContinue
+    foreach ($cmd in $toolkitClaudeCommands) {
+        $p = Join-Path $cmdDir $cmd
+        if (Test-Path $p) { Remove-Item $p -Force }
     }
 }
 
 function Remove-Cursor {
-    Write-Host "[*] Removing Cursor adapter from $targetDir..."
+    Write-Host "[*] Removing Cursor Agent rules..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".cursorrules")
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".cursor\rules\php-upgrade.mdc")
 }
 
 function Remove-Windsurf {
-    Write-Host "[*] Removing Windsurf adapter from $targetDir..."
+    Write-Host "[*] Removing Windsurf Agent rules..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".windsurfrules")
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".windsurf\rules\php-upgrade.md")
 }
 
 function Remove-Gemini {
-    Write-Host "[*] Removing Gemini Code Assist adapter from $targetDir..."
+    Write-Host "[*] Removing Gemini Code Assist..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir "GEMINI.md")
 }
 
 function Remove-Codex {
-    Write-Host "[*] Removing OpenAI Codex / ChatGPT adapter from $targetDir..."
+    Write-Host "[*] Removing OpenAI Codex / ChatGPT..."
     Remove-Merge-Content -FilePath (Join-Path $targetDir ".chatgpt\instructions.md")
 }
 
 # --------------------------------------------------------------------
-# 7. Execute Action
+# 7. Execute Action for All Selected LLMs
 # --------------------------------------------------------------------
 if ($Action -eq "install") {
     Sync-Agents-Folder
 
-    switch ($LLM) {
-        "copilot"  { Install-Copilot }
-        "claude"   { Install-Claude }
-        "cursor"   { Install-Cursor }
-        "windsurf" { Install-Windsurf }
-        "gemini"   { Install-Gemini }
-        "codex"    { Install-Codex }
-        default    {
-            Install-Copilot
-            Install-Claude
-            Install-Cursor
-            Install-Windsurf
-            Install-Gemini
-            Install-Codex
+    foreach ($selected in $selectedLLMs) {
+        switch ($selected) {
+            "copilot"  { Install-Copilot }
+            "claude"   { Install-Claude }
+            "cursor"   { Install-Cursor }
+            "windsurf" { Install-Windsurf }
+            "gemini"   { Install-Gemini }
+            "codex"    { Install-Codex }
         }
     }
 
     Write-Host "`n====================================================================" -ForegroundColor Green
-    Write-Host "   [+] PLUGIN INSTALLED: Project Root is Fully Configured!          " -ForegroundColor Green
+    Write-Host "   [+] AGENTS & SKILLS ACTIVE: Zero Code Modified, All Installed!   " -ForegroundColor Green
     Write-Host "====================================================================" -ForegroundColor Green
     Write-Host "Project Root: $targetDir" -ForegroundColor Cyan
-    Write-Host "Canonical rules and skills reside safely in: $targetDir\.agents\" -ForegroundColor Cyan
-    Write-Host "To remove anytime, run: .\install.ps1 -Uninstall -TargetPath `"$targetDir`"`n" -ForegroundColor DarkGray
+    Write-Host "Configured Assistants: " -NoNewline
+    Write-Host ($selectedLLMs -join ", ").ToUpper() -ForegroundColor Green
 
-    Write-Host "RECOMMENDED NEXT STEPS & COMMANDS TO RUN NOW:" -ForegroundColor Yellow
+    Write-Host "`nRECOMMENDED COMMANDS TO RUN (READ-ONLY / DRY-RUN FIRST):" -ForegroundColor Yellow
     Write-Host "--------------------------------------------------------------------"
     Write-Host "1. Scan for php2shell & RCE vulnerabilities:" -ForegroundColor White
     Write-Host "   php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.`n" -ForegroundColor Cyan
 
-    Write-Host "2. Scan for OWASP Top 10 security flaws (SQLi, SSRF, Deserialization):" -ForegroundColor White
+    Write-Host "2. Scan for OWASP Top 10 security flaws:" -ForegroundColor White
     Write-Host "   php .agents/skills/php-security-hardener/scripts/security-audit.php .`n" -ForegroundColor Cyan
 
-    Write-Host "3. Preview safe PHP Core AST modernization (Up to PHP 8.5+ / Latest):" -ForegroundColor White
+    Write-Host "3. Preview safe PHP Core AST modernization (Dry Run up to PHP 8.5+):" -ForegroundColor White
     Write-Host "   vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php`n" -ForegroundColor Cyan
 
     Write-Host "4. Preview Framework upgrade plan (Laravel 8 -> 12+ / Latest):" -ForegroundColor White
@@ -387,31 +495,26 @@ if ($Action -eq "install") {
     Write-Host "5. Run static analysis deprecation audit:" -ForegroundColor White
     Write-Host "   vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.neon`n" -ForegroundColor Cyan
 
-    Write-Host "OR ASK YOUR AI ASSISTANT DIRECTLY:" -ForegroundColor Yellow
-    Write-Host '   "Audit this codebase for php2shell vulnerabilities, check deprecations,' -ForegroundColor White
-    Write-Host '    and generate a stepwise non-breaking PHP upgrade roadmap."' -ForegroundColor White
+    Write-Host "OR INVOKE YOUR AGENTS DIRECTLY:" -ForegroundColor Yellow
+    Write-Host '   Copilot: @php-upgrade-architect "Plan migration to PHP 8.5 and audit php2shell"' -ForegroundColor White
+    Write-Host '   Claude:  /php-audit and /php-upgrade' -ForegroundColor White
+    Write-Host '   Cursor/Gemini: "Audit this codebase for php2shell vulnerabilities"' -ForegroundColor White
     Write-Host "====================================================================`n" -ForegroundColor Cyan
 } else {
-    switch ($LLM) {
-        "copilot"  { Remove-Copilot }
-        "claude"   { Remove-Claude }
-        "cursor"   { Remove-Cursor }
-        "windsurf" { Remove-Windsurf }
-        "gemini"   { Remove-Gemini }
-        "codex"    { Remove-Codex }
-        default    {
-            Remove-Copilot
-            Remove-Claude
-            Remove-Cursor
-            Remove-Windsurf
-            Remove-Gemini
-            Remove-Codex
+    foreach ($selected in $selectedLLMs) {
+        switch ($selected) {
+            "copilot"  { Remove-Copilot }
+            "claude"   { Remove-Claude }
+            "cursor"   { Remove-Cursor }
+            "windsurf" { Remove-Windsurf }
+            "gemini"   { Remove-Gemini }
+            "codex"    { Remove-Codex }
         }
     }
 
     Write-Host "`n====================================================================" -ForegroundColor Yellow
-    Write-Host "   [-] PLUGIN REMOVED: Cleanly uninstalled from Project Root!      " -ForegroundColor Yellow
+    Write-Host "   [-] UNINSTALL COMPLETE: Cleanly removed selected agent adapters! " -ForegroundColor Yellow
     Write-Host "====================================================================" -ForegroundColor Yellow
     Write-Host "Target: $targetDir" -ForegroundColor Cyan
-    Write-Host "To re-add anytime, simply run: .\install.ps1 -TargetPath `"$targetDir`"`n" -ForegroundColor Green
+    Write-Host "All your original configuration files, PHP code, and settings remain 100% intact.`n" -ForegroundColor Green
 }

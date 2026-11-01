@@ -1,0 +1,24 @@
+includes:
+    - ../../../../vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - ../../../../app
+        - ../../../../src
+    excludePaths:
+        - ../../../../vendor
+        - ../../../../storage
+        - ../../../../cache
+    
+    # Report dynamic properties deprecated in PHP 8.2
+    reportMaybesInPropertyPhpDocTypes: true
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+
+    # Catch implicit nullability deprecated in PHP 8.4
+    treatPhpDocTypesAsCertain: false
+
+    # Ignore common framework magic calls during initial pass
+    ignoreErrors:
+        - '#Access to an undefined property#'

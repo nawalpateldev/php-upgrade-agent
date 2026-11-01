@@ -1,4 +1,4 @@
-# Gemini & Antigravity Assistant Configuration
+﻿# Gemini & Antigravity Assistant Configuration
 This repository contains specialized agents and skills for zero-breakage PHP modernization and php2shell vulnerability remediation.
 
 Canonical Rules: `.agents/rules/AGENTS.md`
@@ -20,4 +20,6 @@ Subagents Available:
 - `php2shell-remediator`
 
 <!-- PHP-UPGRADE-AGENT-END -->
+
+
 

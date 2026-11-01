@@ -1,20 +1,21 @@
 ---
 name: php-core-upgrader
 description: >-
-  Upgrades legacy PHP codebases (PHP 5.6, 7.0-7.4, 8.0, 8.1, 8.2) to PHP 8.3 and 8.4+
-  without breaking application core business logic. Automates AST refactoring,
+  Upgrades legacy PHP codebases (PHP 5.6, 7.0-7.4, 8.0, 8.1, 8.2, 8.3, 8.4) to PHP 8.5+
+  and latest versions without breaking application core business logic. Automates AST refactoring,
   handles deprecations, dynamic properties, type systems, and fatal error prevention.
 ---
 
-# PHP Core Upgrader Skill
+# PHP Core Upgrader Skill (Legacy -> PHP 8.5+ & Latest)
 
-This skill guides the automated, non-destructive migration of legacy PHP applications to PHP 8.3 and 8.4+.
+This skill guides the automated, non-destructive migration of legacy PHP applications to **PHP 8.5.12+ and upcoming releases**.
 
-## Core Principles
+## Core Principles & Anti-Obsolescence Guarantees
 
-1. **Non-destructive AST-based Migration**: Use Rector and PHPStan to safely refactor syntax and type declarations without altering business logic.
-2. **Stepwise Version Transitions**: If migrating from PHP 5.6 or 7.x, adhere to the staged transition path: `5.6 -> 7.4 -> 8.0 -> 8.2 -> 8.3/8.4`.
-3. **Zero Untested Jumps**: Execute tests before and after every version step.
+1. **Non-destructive AST-based Migration**: Use Rector and PHPStan with dynamic version resolution to safely refactor syntax and type declarations without altering business logic.
+2. **Stepwise Version Transitions**: If migrating from PHP 5.6 or 7.x, adhere to the staged transition path: `5.6 -> 7.4 -> 8.0 -> 8.2 -> 8.3 -> 8.4 -> 8.5+`.
+3. **Continuous Forward Compatibility**: Automatically detects the host runtime (e.g. PHP 8.5.12) to ensure rules and type declarations remain modern and do not deprecate.
+4. **Zero Untested Jumps**: Execute tests before and after every version step.
 
 ---
 
@@ -23,7 +24,7 @@ This skill guides the automated, non-destructive migration of legacy PHP applica
 ```mermaid
 flowchart TD
     A[Step 1: Codebase Audit & Baseline Tests] --> B[Step 2: Extension & Composer Compatibility]
-    B --> C[Step 3: Rector AST Refactoring]
+    B --> C[Step 3: Rector AST Refactoring for PHP 8.5+]
     C --> D[Step 4: PHPStan Level 5+ Validation]
     D --> E[Step 5: Runtime & Regression Verification]
     E --> F[Step 6: Security & Deprecation Clean-up]
@@ -44,7 +45,7 @@ Before any code modifications:
 
 ---
 
-### Step 2: Critical PHP 8.0 - 8.4 Breaking Changes Checklist
+### Step 2: Critical PHP 8.0 - 8.5+ Breaking Changes Checklist
 
 Review [PHP Breaking Changes Reference](./references/php-breaking-changes.md) for full details:
 
@@ -59,6 +60,8 @@ Review [PHP Breaking Changes Reference](./references/php-breaking-changes.md) fo
 | **PHP 8.2** | `${var}` string interpolation deprecated | Change to `{$var}` syntax |
 | **PHP 8.3** | Typed class constants & dynamic class constant fetch | Modernize constant access |
 | **PHP 8.4** | Implicitly nullable parameter types deprecated (`function foo(string $bar = null)`) | Modernize to explicit union: `function foo(?string $bar = null)` |
+| **PHP 8.5+** | Dynamic property deprecations escalate towards fatal errors | Fully declare properties or inherit from `stdClass` / `#[\AllowDynamicProperties]` |
+| **PHP 8.5+** | Stricter method override attributes (`#[Override]`) | Adopt `#[Override]` to ensure parent method signatures remain aligned |
 
 ---
 
@@ -92,7 +95,7 @@ vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.n
 
 ### Step 5: Runtime Verification
 
-Run tests against target PHP runtime (e.g. via Docker or local PHP 8.3/8.4):
+Run tests against target PHP runtime (e.g. PHP 8.5.12+):
 ```bash
 php -v
 vendor/bin/phpunit

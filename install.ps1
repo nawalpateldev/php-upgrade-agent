@@ -204,10 +204,10 @@ Write-Host "   php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --
 Write-Host "2. Scan for OWASP Top 10 security flaws (SQLi, SSRF, Deserialization):" -ForegroundColor White
 Write-Host "   php .agents/skills/php-security-hardener/scripts/security-audit.php .`n" -ForegroundColor Cyan
 
-Write-Host "3. Preview safe PHP Core AST modernization (Up to PHP 8.4):" -ForegroundColor White
+Write-Host "3. Preview safe PHP Core AST modernization (Up to PHP 8.5+ / Latest):" -ForegroundColor White
 Write-Host "   vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php`n" -ForegroundColor Cyan
 
-Write-Host "4. Preview Framework upgrade plan (Laravel 8 -> 12):" -ForegroundColor White
+Write-Host "4. Preview Framework upgrade plan (Laravel 8 -> 12+ / Latest):" -ForegroundColor White
 Write-Host "   vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php`n" -ForegroundColor Cyan
 
 Write-Host "5. Run static analysis deprecation audit:" -ForegroundColor White

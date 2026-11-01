@@ -4,3 +4,14 @@
 - Stepwise jumps only: PHP 7.4 -> 8.0 -> 8.2 -> 8.4 | Laravel 8 -> 9 -> 10 -> 11 -> 12.
 - Neutralize all php2shell RCE vectors: block CGI argument injection, replace exec/system with Symfony Process, whitelist dynamic includes, and store uploads outside webroot.
 - For reference documentation and AST rules, consult `.agents/rules/AGENTS.md` and `.agents/skills/`.
+
+<!-- PHP-UPGRADE-AGENT-START -->
+# Cursor AI Rules for PHP Modernization
+- Never refactor code purely for aesthetic reasons during upgrades.
+- Preserve 100% input/output parity of all existing services and API endpoints.
+- Stepwise jumps only: PHP 7.4 -> 8.0 -> 8.2 -> 8.4 -> 8.5+ (Latest) | Laravel 8 -> 9 -> 10 -> 11 -> 12+ (Latest).
+- Neutralize all php2shell RCE vectors: block CGI argument injection, replace exec/system with Symfony Process, whitelist dynamic includes, and store uploads outside webroot.
+- For reference documentation and AST rules, consult `.agents/rules/AGENTS.md` and `.agents/skills/`.
+
+<!-- PHP-UPGRADE-AGENT-END -->
+

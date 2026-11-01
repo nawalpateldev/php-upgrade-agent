@@ -6,15 +6,15 @@ description: >-
   or authentication. Handles Flysystem 3, Symfony Mailer, Kernels, and skeleton transitions.
 ---
 
-# Laravel Upgrader Skill (Laravel 8 -> 12+)
+# Laravel Upgrader Skill (Laravel 8 -> 12+ & Latest)
 
-This skill manages the major architectural and dependency jumps required to migrate a Laravel 8 application to Laravel 9, 10, 11, and 12+.
+This skill manages the major architectural and dependency jumps required to migrate a Laravel 8 application to Laravel 9, 10, 11, 12+, and upcoming framework releases without becoming obsolete over time.
 
 ---
 
 ## Upgrade Strategy: Strict Sequential Progression
 
-Never leap directly from Laravel 8 to 12. Each major version introduces distinct breaking changes across core subsystems:
+Never leap directly across multiple versions. Each major version introduces distinct breaking changes across core subsystems:
 
 ```
 [Laravel 8.x] 
@@ -27,9 +27,9 @@ Never leap directly from Laravel 8 to 12. Each major version introduces distinct
       │ (PHP 8.2+, Streamlined bootstrap/app.php, RouteServiceProvider removal)
       ▼
 [Laravel 11.x]
-      │ (PHP 8.2/8.3+, Concurrency API, Strict Type Bindings)
+      │ (PHP 8.2/8.3/8.5+, Concurrency API, Strict Type Bindings)
       ▼
-[Laravel 12.x / Latest]
+[Laravel 12.x & Latest]
 ```
 
 ---
@@ -39,7 +39,7 @@ Never leap directly from Laravel 8 to 12. Each major version introduces distinct
 ### 1. Dependency Bump (`composer.json`)
 ```json
 "require": {
-    "php": "^8.0.2",
+    "php": "^8.0.2|^8.1|^8.2|^8.3|^8.4|^8.5",
     "laravel/framework": "^9.0",
     "nunomaduro/collision": "^6.1"
 }
@@ -47,14 +47,13 @@ Never leap directly from Laravel 8 to 12. Each major version introduces distinct
 
 ### 2. Flysystem 3 Migration
 Laravel 9 upgraded from Flysystem 1.x to 3.x.
-- `Storage::getDriver()` now returns `League\Flysystem\FilesystemOperator` instead of `Flysystem\FilesystemInterface`.
+- `Storage::getDriver()` returns `League\Flysystem\FilesystemOperator`.
 - File existence checking: `Storage::missing($path)` is preferred over manual `!Storage::exists($path)`.
-- Write/Put operations: Flysystem 3 throws exceptions on write failures instead of returning `false`. Guard disk write operations with `try { ... } catch (UnableToWriteFile $e) { ... }`.
+- Write/Put operations: Guard disk write operations with `try { ... } catch (UnableToWriteFile $e) { ... }`.
 
 ### 3. SwiftMailer to Symfony Mailer
-- SwiftMailer was abandoned; Laravel 9 adopted Symfony Mailer.
-- In `composer.json`, replace `"swiftmailer/swiftmailer"` with `"symfony/mailer"`.
-- Custom transport plugins must be migrated to Symfony Mailer transport factories.
+- Replace `"swiftmailer/swiftmailer"` with `"symfony/mailer"`.
+- Migrate custom transport plugins to Symfony Mailer transport factories.
 
 ---
 
@@ -63,26 +62,18 @@ Laravel 9 upgraded from Flysystem 1.x to 3.x.
 ### 1. Dependency Bump (`composer.json`)
 ```json
 "require": {
-    "php": "^8.1.0",
+    "php": "^8.1.0|^8.2|^8.3|^8.4|^8.5",
     "laravel/framework": "^10.0"
 }
 ```
 
 ### 2. Model `$dates` Deprecation
-- The `$dates` property on Eloquent models is deprecated.
-- **Migration**: Move all custom date fields into the `$casts` property:
+- Move all custom date fields into the `$casts` property:
   ```php
-  // Before (Laravel 9):
-  protected $dates = ['published_at'];
-
-  // After (Laravel 10):
   protected $casts = [
       'published_at' => 'datetime',
   ];
   ```
-
-### 3. Native PHP Type Declarations
-Laravel 10 introduced native return types and argument types across all userland skeleton methods (Service Providers, Controllers, FormRequests).
 
 ---
 
@@ -91,13 +82,13 @@ Laravel 10 introduced native return types and argument types across all userland
 ### 1. Dependency Bump (`composer.json`)
 ```json
 "require": {
-    "php": "^8.2.0",
+    "php": "^8.2.0|^8.3|^8.4|^8.5",
     "laravel/framework": "^11.0"
 }
 ```
 
 ### 2. Streamlined Application Skeleton (`bootstrap/app.php`)
-Laravel 11 removed `app/Http/Kernel.php`, `app/Console/Kernel.php`, and `app/Providers/RouteServiceProvider.php`. Routing and middleware are now configured directly in `bootstrap/app.php`:
+Routing and middleware are configured directly in `bootstrap/app.php`:
 
 ```php
 use Illuminate\Foundation\Application;
@@ -112,54 +103,35 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register custom global middleware or alias middleware here
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Exception reporting & rendering customizations
+        // ...
     })->create();
-```
-
-> [!NOTE]
-> Existing Laravel 10 application kernels (`Kernel.php`) will still execute in Laravel 11 if not deleted. You can retain them during an initial transitional phase and refactor to `bootstrap/app.php` once verified.
-
-### 3. Model Casts Method Modernization
-Laravel 11 introduced `casts()` method alongside `$casts` array:
-```php
-protected function casts(): array
-{
-    return [
-        'is_active' => 'boolean',
-        'options' => 'array',
-    ];
-}
 ```
 
 ---
 
-## Phase 4: Laravel 11 to Laravel 12 (Latest)
+## Phase 4: Laravel 11 to Laravel 12 & Latest
 
 ### 1. Dependency Bump (`composer.json`)
 ```json
 "require": {
-    "php": "^8.2.0|^8.3.0|^8.4.0",
+    "php": ">=8.2.0",
     "laravel/framework": "^12.0"
 }
 ```
 
-### 2. Verification Steps
-1. Run Rector for automated framework migration:
+### 2. Continuous Anti-Obsolescence Execution
+1. Run Rector with dynamic target detection:
    ```bash
    vendor/bin/rector process --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
    ```
-2. Execute tests:
+2. Verify application routes and tests:
    ```bash
    php artisan test
-   ```
-3. Clear and rebuild application caches:
-   ```bash
    php artisan optimize:clear
    php artisan route:list
    ```

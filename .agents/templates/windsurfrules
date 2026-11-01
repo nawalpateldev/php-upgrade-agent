@@ -1,5 +1,5 @@
 # Windsurf AI Rules for PHP Modernization & Security
 - Never refactor code purely for aesthetic reasons during upgrades; preserve 100% input/output parity.
-- Stepwise version jumps only: PHP 7.4 -> 8.0 -> 8.2 -> 8.4 | Laravel 8 -> 9 -> 10 -> 11 -> 12.
+- Stepwise version jumps only: PHP 7.4 -> 8.0 -> 8.2 -> 8.4 -> 8.5+ (Latest) | Laravel 8 -> 9 -> 10 -> 11 -> 12+ (Latest).
 - Neutralize all php2shell RCE vectors: block CGI argument injection (CVE-2024-4577 & 2026 Unicode bypasses), replace exec/system with Symfony Process, whitelist dynamic includes, and store uploads outside webroot.
 - For reference documentation, Rector sets, and AST rules, consult `.agents/rules/AGENTS.md` and `.agents/skills/`.

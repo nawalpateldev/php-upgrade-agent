@@ -5,42 +5,53 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
-use Rector\Php80\Rector\Class_\ClassPropertyAssignToConstructorPromotionRector;
-use Rector\Php81\Rector\ClassMethod\NewInInitializerRector;
+use Rector\ValueObject\PhpVersion;
 use Rector\Php82\Rector\Class_\ReadOnlyClassRector;
 
 /**
- * Production-ready Rector configuration for safe, incremental PHP core upgrades.
- * Target: Up to PHP 8.4
+ * Future-Proof Rector configuration for safe, incremental PHP core upgrades.
+ * Supports legacy PHP (5.6, 7.x, 8.0-8.2) up to PHP 8.5+ and future PHP 8.x/9.x releases.
+ * Automatically aligns with the host runtime version (e.g. PHP 8.5.12) to prevent obsolescence.
  */
 return static function (RectorConfig $rectorConfig): void {
-    // Configure paths to scan (adjust according to your project structure)
+    // 1. Dynamic target PHP version detection
+    // Detects host PHP runtime (e.g., PHP 8.5.12) or falls back to latest supported
+    $currentPhpVersionId = PHP_VERSION_ID;
+    
+    // Set target PHP version dynamically
+    $rectorConfig->phpVersion($currentPhpVersionId);
+
+    // 2. Paths to process
     $rectorConfig->paths([
         __DIR__ . '/../../../../app',
         __DIR__ . '/../../../../src',
     ]);
 
-    // Skip third-party dependencies, test fixtures, and vendor directories
+    // 3. Excluded vendor, storage, and test fixtures
     $rectorConfig->skip([
         '*/vendor/*',
         '*/tests/Fixtures/*',
         '*/storage/*',
         '*/cache/*',
+        // Avoid auto-converting legacy classes to readonly classes if they might be dynamically inherited
+        ReadOnlyClassRector::class,
     ]);
 
-    // Apply incremental level sets for PHP 8.0, 8.1, 8.2, 8.3, and 8.4
-    // Uncomment or adjust based on your current starting baseline
-    $rectorConfig->sets([
-        LevelSetList::UP_TO_PHP_84,
+    // 4. Staged Sets: Apply base modernization sets
+    $sets = [
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,
         SetList::EARLY_RETURN,
-    ]);
+    ];
 
-    // Conservative skips to ensure zero disruption of existing behavior:
-    // Skip overly aggressive transformations on legacy models
-    $rectorConfig->skip([
-        // Avoid auto-converting legacy classes to readonly classes if they might be extended
-        ReadOnlyClassRector::class,
-    ]);
+    // Dynamically apply highest available PHP level set
+    if (defined('Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_85')) {
+        $sets[] = constant('Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_85');
+    } elseif (defined('Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_84')) {
+        $sets[] = LevelSetList::UP_TO_PHP_84;
+    } else {
+        $sets[] = LevelSetList::UP_TO_PHP_83;
+    }
+
+    $rectorConfig->sets($sets);
 };

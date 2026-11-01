@@ -3,16 +3,16 @@
 # 🚀 PHP Upgrade Agent & Security Hardener
 ### Automated Zero-Breakage PHP Upgrades, Framework Migrations & php2shell Security Fixes
 
-[![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4%2B-blue.svg)](https://www.php.net/)
-[![Laravel](https://img.shields.io/badge/Laravel-8%20%E2%86%92%2012%2B-red.svg)](https://laravel.com/)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.5%2B%20%7C%20Latest-blue.svg)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-8%20%E2%86%92%2012%2B%20%7C%20Latest-red.svg)](https://laravel.com/)
 [![Symfony](https://img.shields.io/badge/Symfony-4.4%2F5.4%20%E2%86%92%206.4%2F7.x-black.svg)](https://symfony.com/)
 [![CodeIgniter](https://img.shields.io/badge/CodeIgniter-3%20%E2%86%92%204%2B-orange.svg)](https://codeigniter.com/)
 [![Security](https://img.shields.io/badge/php2shell-Remediated-brightgreen.svg)](#-php2shell-fix-october-2026--rce-defense)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**The all-in-one AI-driven modernization toolkit to upgrade legacy PHP applications to the latest PHP 8.4+ without breaking core business logic, migrate frameworks (Laravel 8 to 12, Symfony 4/5 to 7, CodeIgniter 3 to 4), fix critical PHP vulnerabilities, and neutralize October 2026 php2shell RCE exploits.**
+**The all-in-one AI-driven modernization toolkit to upgrade legacy PHP applications to PHP 8.5+ (including PHP 8.5.12 and upcoming latest versions) without breaking core business logic, migrate frameworks (Laravel 8 to 12+, Symfony 4/5 to 7, CodeIgniter 3 to 4), fix critical PHP vulnerabilities, and neutralize October 2026 php2shell RCE exploits.**
 
-[Quick Start](#-quick-start) • [PHP Core Upgrade](#-php-core-upgrade-56--84) • [Framework Migrations](#-framework-upgrade-suite) • [php2shell Fix](#-php2shell-fix-october-2026--rce-defense) • [PHP Vulnerabilities Fix](#-php-vulnerabilities-fix-owasp-top-10) • [FAQ](#-frequently-asked-questions-seo-faq)
+[Quick Start](#-quick-start--multi-llm-setup) • [PHP Core Upgrade](#-php-core-upgrade-56--85--latest) • [Framework Migrations](#-framework-upgrade-suite) • [php2shell Fix](#-php2shell-fix-october-2026--rce-defense) • [PHP Vulnerabilities Fix](#-php-vulnerabilities-fix-owasp-top-10) • [FAQ](#-frequently-asked-questions-seo-faq)
 
 </div>
 
@@ -81,9 +81,9 @@ php .agents/skills/php-security-hardener/scripts/security-audit.php .
 
 ---
 
-## ⚡ PHP Core Upgrade (5.6 → 8.4+)
+## ⚡ PHP Core Upgrade (5.6 → 8.5+ & Latest)
 
-The **`php-core-upgrader`** skill handles all major breaking changes across modern PHP engines:
+The **`php-core-upgrader`** skill handles all major breaking changes across modern PHP engines with dynamic target detection up to **PHP 8.5.12+ and upcoming releases**:
 
 * **PHP 8.0**:
   * Undefined array key warnings converted to null-coalescing (`$arr['key'] ?? null`).
@@ -94,13 +94,17 @@ The **`php-core-upgrader`** skill handles all major breaking changes across mode
 * **PHP 8.2**:
   * Dynamic property deprecation mitigated with `#[\AllowDynamicProperties]` or typed properties.
   * `${var}` string interpolation upgraded to `{$var}`.
-* **PHP 8.3 & 8.4+**:
+* **PHP 8.3 & 8.4**:
   * Typed class constants and dynamic class constant fetches.
   * Implicit nullable parameter types (`string $param = null`) refactored to explicit `?string $param = null`.
+* **PHP 8.5+ & Latest**:
+  * Dynamic properties escalate to fatal errors; safely bridged or typed.
+  * Enforces `#[Override]` attributes to safeguard subclass methods against signature drift.
+  * Dynamically aligns with host runtime version (`PHP_VERSION_ID`).
 
 #### Run Rector AST PHP Upgrade:
 ```bash
-# Preview changes safely
+# Preview changes safely (targets PHP 8.5+ / Latest)
 vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/scripts/rector-php-upgrade.php
 
 # Apply changes
@@ -115,18 +119,18 @@ vendor/bin/phpstan analyse -c .agents/skills/php-core-upgrader/scripts/phpstan.n
 ## 📦 Framework Upgrade Suite
 
 ```
-[Laravel 8.x]  ──►  [Laravel 9.x]  ──►  [Laravel 10.x] ──►  [Laravel 11.x] ──►  [Laravel 12.x]
+[Laravel 8.x]  ──►  [Laravel 9.x]  ──►  [Laravel 10.x] ──►  [Laravel 11.x] ──►  [Laravel 12.x+]
 [Symfony 4.4]  ──►  [Symfony 5.4]  ──►  [Symfony 6.4 LTS] ──────────────────►  [Symfony 7.x]
 [CodeIgniter 3.x Monolith] ──────────►  [CodeIgniter 4.x PSR-4 Namespaced]
 ```
 
-### 1. Laravel 8 to Laravel 12+ ([Guide](.agents/skills/laravel-upgrader/SKILL.md))
+### 1. Laravel 8 to Laravel 12+ & Latest ([Guide](.agents/skills/laravel-upgrader/SKILL.md))
 - **Laravel 8 to 9**: Flysystem 1 -> 3 migration (`Storage::missing()`, `UnableToWriteFile`), SwiftMailer -> Symfony Mailer, anonymous migrations.
 - **Laravel 9 to 10**: `$dates` array -> `$casts`, native return type declarations in userland classes.
 - **Laravel 10 to 11**: Streamlined skeleton (`bootstrap/app.php`), kernel/route-provider consolidation, model `casts()` method.
-- **Laravel 11 to 12**: Concurrency API, strict attribute casts, modern package compatibility.
+- **Laravel 11 to 12+**: Concurrency API, strict attribute casts, modern package compatibility, dynamic set resolution.
 ```bash
-vendor/bin/rector process --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
+vendor/bin/rector process --dry-run --config=.agents/skills/laravel-upgrader/scripts/rector-laravel.php
 ```
 
 ### 2. Symfony 4.4 / 5.4 to 6.4 & 7.x+ ([Guide](.agents/skills/symfony-upgrader/SKILL.md))

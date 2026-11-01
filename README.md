@@ -53,11 +53,11 @@ The **`php2shell-fixer`** skill provides automated detection and remediation for
 
 #### Run the php2shell Scanner:
 ```bash
-# Native PHP scanner (instant execution):
-php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
+# Native PHP scanner (Zero dependencies - No Python required!):
+php .github/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
 
-# Or Python SAST scanner:
-python .agents/skills/php2shell-fixer/scripts/php2shell-audit.py --path=.
+# Or optional Python SAST scanner (if Python is present in CI/CD):
+python .github/skills/php2shell-fixer/scripts/php2shell-audit.py --path=.
 ```
 
 ---
@@ -288,6 +288,11 @@ vendor/bin/rector process --dry-run --config=.agents/skills/php-core-upgrader/sc
 ---
 
 ## ❓ Frequently Asked Questions (SEO FAQ)
+
+<details>
+<summary><b>Does this toolkit require Python or any external runtime installed on the client system?</b></summary>
+<b>No.</b> Python is <b>not required</b>. The entire toolkit is built to be 100% native PHP. The vulnerability scanners (<code>php2shell-audit.php</code> and <code>security-audit.php</code>), AST refactorers, and migration agents run directly on the standard PHP CLI that you already use with XAMPP, Docker, or your system PHP. The installers (<code>install.ps1</code>, <code>install.sh</code>, <code>install.bat</code>) run natively in your OS shell with zero external dependencies.
+</details>
 
 <details>
 <summary><b>How do I upgrade PHP legacy without breaking core business logic?</b></summary>

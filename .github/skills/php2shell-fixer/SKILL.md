@@ -39,13 +39,13 @@ flowchart TD
 
 ## Step 1: Run the Automated SAST Scanner
 
-Scan your codebase for all shell-spawning primitives and vulnerable patterns using the native PHP scanner [php2shell-audit.php](./scripts/php2shell-audit.php) or [php2shell-audit.py](./scripts/php2shell-audit.py):
+Scan your codebase for all shell-spawning primitives and vulnerable patterns using the native PHP scanner [php2shell-audit.php](./scripts/php2shell-audit.php) (Zero dependencies — no Python required):
 
 ```bash
-# Using native PHP:
+# Using native PHP (Recommended - No Python needed):
 php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=./app
 
-# Or using Python:
+# Or using optional Python script (if Python is available in CI):
 python .agents/skills/php2shell-fixer/scripts/php2shell-audit.py --path=./app
 ```
 

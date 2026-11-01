@@ -155,7 +155,9 @@ This repository integrates 3 Antigravity subagents ready to handle your workflow
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Multi-LLM Setup
+
+The toolkit includes native, zero-dependency installation scripts for **Windows, Linux, and macOS**. You can select your preferred AI assistant with **GitHub Copilot** as the default.
 
 ### 1. Clone the Repository
 ```bash
@@ -163,13 +165,43 @@ git clone git@github.com:nawalpateldev/php-upgrade-agent.git
 cd php-upgrade-agent
 ```
 
-### 2. Install Modernization Engines
+### 2. Run the Native Installer
+
+#### On Windows (PowerShell or Command Prompt):
+```powershell
+# Interactive menu (Press Enter for GitHub Copilot):
+.\install.ps1
+
+# Or specify your LLM directly:
+.\install.ps1 copilot     # GitHub Copilot (Default)
+.\install.ps1 claude      # Claude Code
+.\install.ps1 cursor      # Cursor AI
+.\install.ps1 gemini      # Google Gemini / Antigravity
+.\install.ps1 all         # Configure All Assistants
+```
+*(You can also double-click or run `install.bat`)*
+
+#### On Linux & macOS (Bash):
 ```bash
-composer install
+chmod +x install.sh
+
+# Interactive menu (Press Enter for GitHub Copilot):
+./install.sh
+
+# Or specify your LLM directly:
+./install.sh copilot      # GitHub Copilot (Default)
+./install.sh claude       # Claude Code
+./install.sh cursor       # Cursor AI
+./install.sh gemini       # Google Gemini / Antigravity
+./install.sh all          # Configure All Assistants
 ```
 
-### 3. Run Vulnerability & php2shell Scans
+---
+
+### 3. Install Modernization Engines & Run Security Scans
 ```bash
+composer install
+
 # Check php2shell RCE vectors
 php .agents/skills/php2shell-fixer/scripts/php2shell-audit.php --path=.
 
